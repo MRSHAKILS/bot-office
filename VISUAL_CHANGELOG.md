@@ -15,3 +15,5 @@
 
 ## 2026-10-30
 - Fishbowl glass curtain, per-bot workstations with RGB underglow + animated screens, per-bot outfits.
+--- MOTION note ---
+- Motion system: see MOTION.md (walk gait, sit ease, desk typing/idle breathe; no snap under 28u).

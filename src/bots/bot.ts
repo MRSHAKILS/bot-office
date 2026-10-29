@@ -4,8 +4,7 @@ import { BOT_STYLES } from './styles';
 import type { TeamMember, Accessory } from './team';
 import type { BotState } from '../api/status';
 import { AISLES_Z, CORRIDORS_X, deskEntry, deskSeat, HANDOFF_POINT, LEAD_DOOR, LEAD_SEAT } from '../office/layout';
-
-const SPEED = 5.5; // units / s
+import { SIT_MS, WALK_BASE, SNAP_DIST, easeOutCubic, hash01, lerpAngle, poseFor } from './motion';
 
 function accessoryMesh(a: Accessory, color: string): THREE.Object3D {
   const c = '#e5e0d6';
@@ -31,10 +30,15 @@ export class Bot {
   private body: THREE.Group; private parcel: THREE.Mesh;
   path: THREE.Vector3[] = []; place: Place = 'lounge'; seated = true; facing = 0;
   state: BotState = 'idle'; statusLine = ''; private walkT = 0; private handoffUntil = 0; private wantDesk = false;
+  private sitBlend = 1; private sitFrom = 1; private sitTo = 1; private sitAge = SIT_MS;
+  private phase = 0; private speedMul = 1; private animT = 0;
+  private pendingRoute: { to: THREE.Vector3; toLead: boolean } | null = null;
   readonly head = new THREE.Object3D();
   m: TeamMember; loungeSeat: THREE.Vector3;
   constructor(m: TeamMember, loungeSeat: THREE.Vector3) {
     this.m = m; this.loungeSeat = loungeSeat;
+    this.phase = hash01(m.id) * Math.PI * 2;
+    this.speedMul = 0.92 + hash01(m.id + 'spd') * 0.16;
     const col = m.color;
     this.body = new THREE.Group(); this.group.add(this.body);
     const mk = (w: number, h: number, d: number, x: number, y: number, z: number, c = col) => { const g = new THREE.Group(); const b = box(w, h, d, c, 0, -h, 0); g.add(b); g.position.set(x, y, z); return g; };
@@ -52,17 +56,23 @@ export class Bot {
     else { acc.position.set(0.02, -0.42, 0.1); this.armR.add(acc); }
     this.parcel = box(0.3, 0.22, 0.24, '#b89a6a', 0, -0.3, 0.26); this.parcel.visible = false; this.armL.add(this.parcel);
     this.head.position.set(0, 1.35, 0); this.group.add(this.head);
-    this.group.position.copy(loungeSeat); this.applyPose(true);
+    this.group.position.copy(loungeSeat); this.applyPoseInstant(true);
     this.face(loungeSeat.z < 7 ? 0 : Math.PI);
   }
   private face(a: number) { this.facing = a; this.group.rotation.y = a; }
-  private applyPose(sit: boolean) {
-    this.seated = sit;
-    this.body.position.y = sit ? -0.12 : 0;
-    const r = sit ? -Math.PI / 2 : 0; this.legL.rotation.x = r; this.legR.rotation.x = r;
-    this.armL.rotation.x = sit ? -0.5 : 0; this.armR.rotation.x = sit ? -0.5 : 0;
+  private beginSit(sit: boolean) {
+    this.sitFrom = this.sitBlend; this.sitTo = sit ? 1 : 0; this.sitAge = 0; this.seated = sit;
+  }
+  private applyPoseInstant(sit: boolean) {
+    this.seated = sit; this.sitBlend = sit ? 1 : 0; this.sitFrom = this.sitBlend; this.sitTo = this.sitBlend; this.sitAge = SIT_MS;
+    const p = poseFor(this.state, sit, 0, this.phase, this.parcel.visible);
+    this.body.position.y = p.bodyY; this.legL.rotation.x = p.leg; this.legR.rotation.x = p.leg;
+    this.armL.rotation.x = p.armL; this.armR.rotation.x = p.armR; this.body.rotation.z = p.leanZ; this.head.rotation.y = p.headY;
   }
   private route(to: THREE.Vector3, toLead = false) {
+    if (this.sitAge < SIT_MS && this.sitTo === 1) { this.pendingRoute = { to: to.clone(), toLead }; this.beginSit(false); return; }
+    if (this.sitBlend > 0.05) { this.pendingRoute = { to: to.clone(), toLead }; this.beginSit(false); return; }
+    this.pendingRoute = null;
     const from = this.group.position.clone();
     const nearest = (arr: number[], v: number) => arr.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a);
     const pts: THREE.Vector3[] = [];
@@ -72,7 +82,6 @@ export class Bot {
     else if (cur.x < -12) { const p = new THREE.Vector3(cur.x, 0, 5.3); pts.push(p, new THREE.Vector3(-11, 0, 5.3)); cur = new THREE.Vector3(-11, 0, 5.3); }
     else if (cur.z > -7.5) { const az = nearest(AISLES_Z, cur.z); const p = new THREE.Vector3(cur.x + (Math.abs(cur.z - az) > 1 ? 2.6 : 0), 0, cur.z); if (p.x !== cur.x) pts.push(p); pts.push(new THREE.Vector3(p.x, 0, az)); cur = new THREE.Vector3(p.x, 0, az); }
     else { const p = new THREE.Vector3(cur.x + 2.6, 0, cur.z); pts.push(p, new THREE.Vector3(p.x, 0, -6.5)); cur = new THREE.Vector3(p.x, 0, -6.5); }
-    // travel along corridor to target's aisle
     const targetAisle = enterLead ? -6.5 : to.x < -12 ? 5.3 : nearest(AISLES_Z, to.z);
     const corr = nearest(CORRIDORS_X, cur.x);
     pts.push(new THREE.Vector3(corr, 0, cur.z), new THREE.Vector3(corr, 0, targetAisle));
@@ -81,13 +90,12 @@ export class Bot {
     else { const e = new THREE.Vector3(to.x + 2.6, 0, targetAisle); pts.push(e, new THREE.Vector3(e.x, 0, to.z)); }
     pts.push(to.clone());
     this.path = pts.filter((p, i) => i === 0 || p.distanceTo(pts[i - 1]) > 0.01);
-    this.applyPose(false);
+    this.beginSit(false);
+    void deskEntry;
   }
-  /** Apply an effective state. Decides where the bot should be. */
   setState(s: BotState, line: string, now: number) {
     const prev = this.state; this.state = s; this.statusLine = line;
     const atWork = s === 'working' || s === 'waiting' || s === 'error';
-    // Always re-assert desk while at work (fixes lounge desync if a route was dropped).
     if (atWork) { this.wantDesk = true; this.goDesk(); return; }
     if (prev === s) return;
     this.wantDesk = false;
@@ -100,37 +108,77 @@ export class Bot {
     const seat = this.seat();
     if (this.place === 'desk' && !this.path.length && this.group.position.distanceTo(seat) < 0.6) return;
     this.place = 'desk'; this.parcel.visible = false;
-    // Lounge → desk always snaps so simulate / status pushes show work instantly.
-    if (this.group.position.distanceTo(seat) > 2.5) {
-      this.path = []; this.group.position.copy(seat); this.face(Math.PI); this.applyPose(true); return;
+    const dist = this.group.position.distanceTo(seat);
+    // Snap only for extreme desync repair — never for normal simulate moves.
+    if (dist > SNAP_DIST && this.path.length === 0 && dist > 0) {
+      this.path = []; this.group.position.copy(seat); this.face(Math.PI); this.applyPoseInstant(true); return;
     }
-    this.m.lead ? this.route(LEAD_SEAT, true) : this.route(seat); void deskEntry;
+    this.m.lead ? this.route(LEAD_SEAT, true) : this.route(seat);
   }
   private goLounge() {
     if (this.place === 'lounge' && !this.path.length && this.group.position.distanceTo(this.loungeSeat) < 0.6) return;
     this.place = 'lounge';
-    if (this.group.position.distanceTo(this.loungeSeat) > 10) {
-      this.path = []; this.group.position.copy(this.loungeSeat); this.face(this.loungeSeat.z < 7 ? 0 : Math.PI); this.applyPose(true); return;
+    const dist = this.group.position.distanceTo(this.loungeSeat);
+    if (dist > SNAP_DIST) {
+      this.path = []; this.group.position.copy(this.loungeSeat); this.face(this.loungeSeat.z < 7 ? 0 : Math.PI); this.applyPoseInstant(true); return;
     }
     this.route(this.loungeSeat);
   }
   update(dt: number, now: number) {
+    this.animT += dt;
+    if (this.sitAge < SIT_MS) {
+      this.sitAge += dt * 1000;
+      this.sitBlend = this.sitFrom + (this.sitTo - this.sitFrom) * easeOutCubic(this.sitAge / SIT_MS);
+      if (this.sitAge >= SIT_MS) {
+        this.sitBlend = this.sitTo; this.seated = this.sitTo > 0.5;
+        if (this.pendingRoute && this.sitTo === 0) { const r = this.pendingRoute; this.pendingRoute = null; this.route(r.to, r.toLead); }
+      }
+    }
     if (this.path.length) {
       const tgt = this.path[0]; const p = this.group.position; const d = tgt.clone().sub(p); d.y = 0;
-      const step = SPEED * dt;
+      const remaining = this.path.length === 1 ? d.length() : 99;
+      const speed = WALK_BASE * this.speedMul * (remaining < 0.45 ? 0.55 : 1);
+      const step = speed * dt;
       if (d.length() <= step) { p.copy(tgt); this.path.shift(); }
-      else { d.normalize(); p.addScaledVector(d, step); this.face(Math.atan2(d.x, d.z)); }
-      this.walkT += dt * 9; const sw = Math.sin(this.walkT) * 0.6;
-      this.legL.rotation.x = sw; this.legR.rotation.x = -sw; this.armL.rotation.x = this.parcel.visible ? -1.2 : -sw * 0.7; this.armR.rotation.x = sw * 0.7;
+      else {
+        d.normalize(); p.addScaledVector(d, step);
+        const yaw = Math.atan2(d.x, d.z);
+        this.facing = lerpAngle(this.facing, yaw, Math.min(1, dt * 12));
+        this.group.rotation.y = this.facing;
+      }
+      this.walkT += dt * (7.2 + speed * 0.4);
+      const sw = Math.sin(this.walkT) * 0.55;
+      const bob = Math.abs(Math.sin(this.walkT)) * 0.04;
+      this.body.position.y = bob;
+      this.legL.rotation.x = sw; this.legR.rotation.x = -sw;
+      this.armL.rotation.x = this.parcel.visible ? -1.15 : -sw * 0.7;
+      this.armR.rotation.x = sw * 0.7;
+      this.body.rotation.z = this.parcel.visible ? 0.06 : 0;
+      this.head.rotation.y = 0;
       if (!this.path.length) this.arrive(now);
-    } else if (this.place === 'handoff' && this.handoffUntil && now > this.handoffUntil) {
-      this.parcel.visible = false; this.handoffUntil = 0; this.wantDesk ? this.goDesk() : this.goLounge();
+      return;
     }
+    if (this.place === 'handoff' && this.handoffUntil && now > this.handoffUntil) {
+      this.parcel.visible = false; this.handoffUntil = 0; this.wantDesk ? this.goDesk() : this.goLounge();
+      return;
+    }
+    // Seated / standing micro-motion
+    const seated = this.sitBlend > 0.5;
+    const target = poseFor(this.state, seated, this.animT, this.phase, this.parcel.visible);
+    const stand = poseFor(this.state, false, this.animT, this.phase, this.parcel.visible);
+    const k = this.sitBlend;
+    this.body.position.y = stand.bodyY + (target.bodyY - stand.bodyY) * k;
+    this.legL.rotation.x = stand.leg + (target.leg - stand.leg) * k;
+    this.legR.rotation.x = this.legL.rotation.x;
+    this.armL.rotation.x = stand.armL + (target.armL - stand.armL) * k;
+    this.armR.rotation.x = stand.armR + (target.armR - stand.armR) * k;
+    this.body.rotation.z = target.leanZ * k;
+    this.head.rotation.y = target.headY * k;
   }
   private arrive(now: number) {
-    if (this.place === 'handoff') { this.face(-Math.PI / 2); this.applyPose(false); this.armL.rotation.x = -1.2; this.handoffUntil = now + 1800; return; }
-    if (this.place === 'desk') { this.face(Math.PI); this.applyPose(true); return; }
-    this.face(this.loungeSeat.z < 7 ? 0 : Math.PI); this.applyPose(true);
+    if (this.place === 'handoff') { this.face(-Math.PI / 2); this.beginSit(false); this.armL.rotation.x = -1.15; this.handoffUntil = now + 1800; return; }
+    if (this.place === 'desk') { this.face(Math.PI); this.beginSit(true); return; }
+    this.face(this.loungeSeat.z < 7 ? 0 : Math.PI); this.beginSit(true);
   }
   get moving() { return this.path.length > 0; }
 }
