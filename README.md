@@ -8,7 +8,7 @@ Live **isometric ops floor** for a Grok Bot roster — Vite + Three.js front end
 
 ![Bot Office walkthrough](docs/demo/office-preview.gif)
 
-Short clip: [docs/demo/office-walkthrough.mp4](docs/demo/office-walkthrough.mp4) · earlier slideshow: [docs/demo/simulation-preview.mp4](docs/demo/simulation-preview.mp4)
+Live capture of Simulate Work with bots at their desks. Clip: [docs/demo/office-walkthrough.mp4](docs/demo/office-walkthrough.mp4)
 
 ## Screenshots
 
