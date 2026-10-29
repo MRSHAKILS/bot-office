@@ -96,7 +96,12 @@ export class Bot {
   setState(s: BotState, line: string, now: number) {
     const prev = this.state; this.state = s; this.statusLine = line;
     const atWork = s === 'working' || s === 'waiting' || s === 'error';
-    if (atWork) { this.wantDesk = true; this.goDesk(); return; }
+    if (atWork) {
+      this.wantDesk = true;
+      // Don't re-kick routing every poll tick — that resets sit-ease and cancels walks.
+      if (this.path.length || this.pendingRoute || (this.sitAge < SIT_MS && this.sitTo === 0)) return;
+      this.goDesk(); return;
+    }
     if (prev === s) return;
     this.wantDesk = false;
     if (s === 'done' && (prev === 'working' || prev === 'waiting') && !this.m.lead) { this.parcel.visible = true; this.place = 'handoff'; this.route(HANDOFF_POINT, true); this.handoffUntil = 0; return; }
@@ -106,19 +111,21 @@ export class Bot {
   private seat() { return this.m.lead ? LEAD_SEAT : deskSeat(this.m.dept); }
   private goDesk() {
     const seat = this.seat();
-    if (this.place === 'desk' && !this.path.length && this.group.position.distanceTo(seat) < 0.6) return;
-    this.place = 'desk'; this.parcel.visible = false;
     const dist = this.group.position.distanceTo(seat);
+    if (dist < 0.6 && !this.path.length) { this.place = 'desk'; return; }
+    if (this.path.length || this.pendingRoute || (this.sitAge < SIT_MS && this.sitTo === 0)) { this.place = 'desk'; return; }
+    this.place = 'desk'; this.parcel.visible = false;
     // Snap only for extreme desync repair — never for normal simulate moves.
-    if (dist > SNAP_DIST && this.path.length === 0 && dist > 0) {
+    if (dist > SNAP_DIST) {
       this.path = []; this.group.position.copy(seat); this.face(Math.PI); this.applyPoseInstant(true); return;
     }
     this.m.lead ? this.route(LEAD_SEAT, true) : this.route(seat);
   }
   private goLounge() {
-    if (this.place === 'lounge' && !this.path.length && this.group.position.distanceTo(this.loungeSeat) < 0.6) return;
-    this.place = 'lounge';
     const dist = this.group.position.distanceTo(this.loungeSeat);
+    if (dist < 0.6 && !this.path.length) { this.place = 'lounge'; return; }
+    if (this.path.length || this.pendingRoute || (this.sitAge < SIT_MS && this.sitTo === 0)) { this.place = 'lounge'; return; }
+    this.place = 'lounge';
     if (dist > SNAP_DIST) {
       this.path = []; this.group.position.copy(this.loungeSeat); this.face(this.loungeSeat.z < 7 ? 0 : Math.PI); this.applyPoseInstant(true); return;
     }
