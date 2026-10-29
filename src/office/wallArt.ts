@@ -1,78 +1,96 @@
 import * as THREE from 'three';
 import { box, canvasTexture } from './materials';
 /**
- * Sparse gallery wall art — public portfolio titles + stack wordmarks only.
- * Titles must read at default isometric distance: big type, little ornament.
- * No contact info, numbers, or unpublished work. Max 6 pieces.
+ * Sparse gallery — public portfolio titles + stack wordmarks only.
+ * Sized for default isometric camera (~60u away): large frames, no mipmaps,
+ * MeshBasicMaterial so lighting doesn't wash letterforms.
+ * Source: mrshakils.vercel.app / public GitHub. Max 5 pieces.
  */
-type Motif = 'orbit' | 'wave' | 'leaf' | 'bars' | 'none';
-interface Piece { title: string; lines?: string[]; kicker: string; motif: Motif; accent: string; wall: 'north' | 'west'; at: number; w: number; h: number; }
+interface Piece {
+  title: string;
+  lines?: string[];
+  kicker: string;
+  accent: string;
+  wall: 'north' | 'west';
+  at: number;
+  w: number;
+  h: number;
+}
 const PIECES: Piece[] = [
-  { title: 'MathScriber AI', kicker: 'PROJECT', motif: 'wave', accent: '#5b7fa6', wall: 'north', at: -7.4, w: 2.4, h: 1.5 },
-  { title: 'Gargantua', kicker: 'PROJECT', motif: 'orbit', accent: '#b08a5a', wall: 'north', at: 6.2, w: 2.0, h: 1.5 },
-  { title: 'Stack', lines: ['React', 'Next.js', 'PyTorch'], kicker: 'STACK', motif: 'bars', accent: '#6b7f8e', wall: 'north', at: 11.0, w: 1.6, h: 1.8 },
-  { title: 'ChashiBhAI', kicker: 'PROJECT', motif: 'leaf', accent: '#6f8f6a', wall: 'west', at: 0.4, w: 2.4, h: 1.5 },
-  { title: 'Stack', lines: ['FastAPI', 'Cloudflare', 'Three.js'], kicker: 'STACK', motif: 'bars', accent: '#8a7d9e', wall: 'west', at: 11.2, w: 1.6, h: 1.8 },
+  { title: 'MathScriber AI', kicker: 'PROJECT', accent: '#5b7fa6', wall: 'north', at: -8.2, w: 4.2, h: 2.2 },
+  { title: 'Gargantua', kicker: 'PROJECT', accent: '#b08a5a', wall: 'north', at: 7.6, w: 3.6, h: 2.2 },
+  { title: 'Stack', lines: ['React', 'Next.js', 'PyTorch'], kicker: 'STACK', accent: '#6b7f8e', wall: 'north', at: 12.8, w: 2.6, h: 2.6 },
+  { title: 'ChashiBhAI', kicker: 'PROJECT', accent: '#6f8f6a', wall: 'west', at: 1.2, w: 4.2, h: 2.2 },
+  { title: 'Stack', lines: ['FastAPI', 'Cloudflare', 'Three.js'], kicker: 'STACK', accent: '#8a7d9e', wall: 'west', at: 10.8, w: 2.6, h: 2.6 },
 ];
 
 function paint(c: CanvasRenderingContext2D, W: number, H: number, p: Piece) {
-  c.fillStyle = '#f7f5f0'; c.fillRect(0, 0, W, H);
-  // Accent bar top
-  c.fillStyle = p.accent; c.fillRect(0, 0, W, H * 0.045);
-  // Tiny motif top-right (never compete with title)
-  c.save(); c.globalAlpha = 0.35; c.strokeStyle = p.accent; c.fillStyle = p.accent; c.lineWidth = W * 0.006;
-  const mx = W * 0.82, my = H * 0.22;
-  if (p.motif === 'orbit') { c.beginPath(); c.arc(mx, my, H * 0.06, 0, 7); c.stroke(); c.beginPath(); c.ellipse(mx, my, H * 0.11, H * 0.035, -0.4, 0, 7); c.stroke(); }
-  if (p.motif === 'wave') { c.beginPath(); for (let x = 0; x < W * 0.28; x += 3) { const y = my + Math.sin(x / 18) * H * 0.04; x ? c.lineTo(mx - W * 0.14 + x, y) : c.moveTo(mx - W * 0.14 + x, y); } c.stroke(); }
-  if (p.motif === 'leaf') { c.beginPath(); c.ellipse(mx, my, H * 0.035, H * 0.08, 0.4, 0, 7); c.fill(); }
-  if (p.motif === 'bars') { for (let i = 0; i < 3; i++) c.fillRect(mx - H * 0.08 + i * H * 0.06, my + H * 0.04 - i * H * 0.03, H * 0.04, H * 0.02 + i * H * 0.03); }
-  c.restore();
+  c.fillStyle = '#faf8f3'; c.fillRect(0, 0, W, H);
+  c.fillStyle = p.accent; c.fillRect(0, 0, W, Math.max(18, H * 0.05));
 
-  // Kicker
-  c.fillStyle = '#8a8f96';
-  c.font = `700 ${Math.round(H * 0.07)}px Inter, system-ui, sans-serif`;
-  c.fillText(p.kicker, W * 0.08, H * 0.22);
+  c.fillStyle = '#7a8088';
+  const kickFs = Math.round(H * 0.09);
+  c.font = `700 ${kickFs}px Inter, system-ui, sans-serif`;
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  c.fillText(p.kicker, W * 0.07, H * 0.2);
 
-  // Title — dominate the frame
-  c.fillStyle = '#1a1d23';
+  c.fillStyle = '#12151a';
   if (p.lines?.length) {
-    let fs = H * 0.16;
-    c.font = `650 ${Math.round(fs)}px Inter, system-ui, sans-serif`;
-    let y = H * 0.42;
+    let fs = H * 0.2;
+    c.font = `700 ${Math.round(fs)}px Inter, system-ui, sans-serif`;
+    let y = H * 0.4;
     for (const line of p.lines) {
-      while (c.measureText(line).width > W * 0.84 && fs > 18) { fs -= 2; c.font = `650 ${Math.round(fs)}px Inter, system-ui, sans-serif`; }
-      c.fillText(line, W * 0.08, y); y += fs * 1.25;
+      while (c.measureText(line).width > W * 0.86 && fs > 28) {
+        fs -= 3; c.font = `700 ${Math.round(fs)}px Inter, system-ui, sans-serif`;
+      }
+      c.fillText(line, W * 0.07, y); y += fs * 1.22;
     }
   } else {
-    let fs = H * 0.22;
-    c.font = `650 ${Math.round(fs)}px Inter, system-ui, sans-serif`;
-    // wrap to 2 lines if needed
-    const maxW = W * 0.84;
+    let fs = H * 0.32;
+    c.font = `700 ${Math.round(fs)}px Inter, system-ui, sans-serif`;
+    const maxW = W * 0.86;
     const words = p.title.split(' ');
     let line1 = p.title, line2 = '';
     if (c.measureText(p.title).width > maxW && words.length > 1) {
-      line1 = words.slice(0, -1).join(' '); line2 = words[words.length - 1];
-      while (c.measureText(line1).width > maxW && fs > 22) { fs -= 2; c.font = `650 ${Math.round(fs)}px Inter, system-ui, sans-serif`; }
-    } else {
-      while (c.measureText(p.title).width > maxW && fs > 22) { fs -= 2; c.font = `650 ${Math.round(fs)}px Inter, system-ui, sans-serif`; }
+      // prefer split before last word
+      line1 = words.slice(0, -1).join(' ');
+      line2 = words[words.length - 1];
     }
-    const y0 = line2 ? H * 0.48 : H * 0.55;
-    c.fillText(line1, W * 0.08, y0);
-    if (line2) c.fillText(line2, W * 0.08, y0 + fs * 1.15);
+    while (c.measureText(line1).width > maxW && fs > 36) {
+      fs -= 3; c.font = `700 ${Math.round(fs)}px Inter, system-ui, sans-serif`;
+    }
+    if (line2) {
+      while (c.measureText(line2).width > maxW && fs > 36) {
+        fs -= 3; c.font = `700 ${Math.round(fs)}px Inter, system-ui, sans-serif`;
+      }
+    }
+    const y0 = line2 ? H * 0.52 : H * 0.62;
+    c.fillText(line1, W * 0.07, y0);
+    if (line2) c.fillText(line2, W * 0.07, y0 + fs * 1.12);
   }
 }
 
 export function wallArt(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
-  for (const p of PIECES.slice(0, 6)) {
-    const pxW = 1024, pxH = Math.round(1024 * p.h / p.w);
-    const { tex } = canvasTexture(pxW, pxH, (c) => paint(c, pxW, pxH, p), renderer);
+  const pxPerUnit = 320; // denser than carpets so glyphs survive distance
+  for (const p of PIECES) {
+    const pxW = Math.round(p.w * pxPerUnit);
+    const pxH = Math.round(p.h * pxPerUnit);
+    // no mipmaps — same crisp path as floor zone letters
+    const { tex } = canvasTexture(pxW, pxH, (c) => paint(c, pxW, pxH, p), renderer, false);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+
     const g = new THREE.Group();
-    g.add(box(p.w + 0.14, p.h + 0.14, 0.07, '#5c5750', 0, -(p.h + 0.14) / 2, 0));
-    const art = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.88 }));
-    art.position.z = 0.036; g.add(art);
-    g.position.y = 2.15;
-    if (p.wall === 'north') g.position.set(p.at, 2.15, -13.96);
-    else { g.position.set(-19.96, 2.15, p.at); g.rotation.y = Math.PI / 2; }
+    g.add(box(p.w + 0.16, p.h + 0.16, 0.08, '#5c5750', 0, -(p.h + 0.16) / 2, 0));
+    const art = new THREE.Mesh(
+      new THREE.PlaneGeometry(p.w, p.h),
+      new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }),
+    );
+    art.position.z = 0.042; g.add(art);
+    // hang mid-wall height so frames clear desks but stay in default frustum
+    if (p.wall === 'north') g.position.set(p.at, 2.4, -13.96);
+    else { g.position.set(-19.96, 2.4, p.at); g.rotation.y = Math.PI / 2; }
     scene.add(g);
   }
 }
