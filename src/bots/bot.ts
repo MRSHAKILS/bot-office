@@ -98,8 +98,8 @@ export class Bot {
     const seat = this.seat();
     if (this.place === 'desk' && !this.path.length && this.group.position.distanceTo(seat) < 0.6) return;
     this.place = 'desk'; this.parcel.visible = false;
-    // Long trips (lounge → desk) snap so slow clients still show bots working; short hops walk.
-    if (this.group.position.distanceTo(seat) > 10) {
+    // Lounge → desk always snaps so simulate / status pushes show work instantly.
+    if (this.group.position.distanceTo(seat) > 2.5) {
       this.path = []; this.group.position.copy(seat); this.face(Math.PI); this.applyPose(true); return;
     }
     this.m.lead ? this.route(LEAD_SEAT, true) : this.route(seat); void deskEntry;
