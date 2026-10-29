@@ -60,6 +60,7 @@ window.addEventListener('resize', resize); resize();
 
 // ---- status wiring ----------------------------------------------------------
 const sim = new Simulation();
+const forceSim = new URLSearchParams(location.search).get('simulate') === '1';
 let live: StatusPayload | null = null; let feedError = false;
 function apply(p: StatusPayload, simulated: boolean) {
   const now = Date.now(); let active = 0;
@@ -80,7 +81,11 @@ function refreshWarning() {
 }
 let authed = false; let guest = false; let gateOpen = false;
 async function poll() {
-  try { live = await fetchStatus(); feedError = false; authed = true; if (guest) { guest = false; ui.setGuest(false); } if (!sim.running) apply(live, false); }
+  try {
+    live = await fetchStatus(); feedError = false; authed = true;
+    if (guest) { guest = false; ui.setGuest(false); if (sim.running && !forceSim) setSim(false); }
+    if (!sim.running) apply(live, false);
+  }
   catch (e) {
     if (e instanceof UnauthorizedError && import.meta.env.VITE_DEV_SKIP_AUTH !== '1') { authed = false; live = null; enterGuest(); }
     else feedError = true;
@@ -108,7 +113,8 @@ ui.simBtn.addEventListener('click', () => {
   setSim(!sim.running);
 });
 ui.signInBtn.addEventListener('click', () => void signIn());
-if (new URLSearchParams(location.search).get('simulate') === '1') setSim(true);
+if (forceSim) setSim(true);
+else ui.setGuest(true); // chip immediately; 401 → enterGuest starts sim
 poll(); setInterval(poll, 20000); setInterval(refreshWarning, 30000);
 
 // ---- loop -------------------------------------------------------------------
