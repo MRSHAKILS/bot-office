@@ -1,6 +1,6 @@
 ﻿# Bot Office
 
-Live **isometric ops floor** for a Grok Bot roster — Vite + Three.js front end, Cloudflare Worker + SQLite Durable Object for real status and usage.
+Live **isometric ops floor** with fishbowl glass, per-bot outfits, and custom workstations — for a Grok Bot roster — Vite + Three.js front end, Cloudflare Worker + SQLite Durable Object for real status and usage.
 
 **Live demo:** [bot-office.work-ahmedshakil.workers.dev](https://bot-office.work-ahmedshakil.workers.dev) (password-gated; password is not published here)
 
@@ -87,3 +87,4 @@ Design brief: [VISUAL.md](VISUAL.md). Recent polish notes: [VISUAL_CHANGELOG.md]
 ## License
 
 MIT — see [LICENSE](LICENSE).
+

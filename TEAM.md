@@ -16,3 +16,5 @@
 \* Assumptions: Lamar, Victoria and Mentor had no profile color, so these are stand-in colors used only in the office.
 - The niẓām calendar accessory stands in for the prayer mat, which is hard to read at this size.
 - Status is matched by agent id (in `src/bots/team.ts`) or by exact name.
+
+> New bot? Add a station in src/office/stations.ts and a style in src/bots/styles.ts.

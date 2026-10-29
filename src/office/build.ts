@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { box, matte, canvasTexture } from './materials';
 import { ZONES, LEAD_OFFICE } from './layout';
 import { TEAM } from '../bots/team';
+import { STATIONS, DEFAULT_STATION, buildStation } from './stations';
 
 export interface OfficeHandles { blinkers: THREE.Mesh[]; update(t: number): void; }
 
-const FLOOR = '#f4f2ec', WALL = '#f7f5f0', BASE = '#cfc9bd', WOOD = '#c4a882', DARK = '#3a3f46', CHAIR = '#3a3f46', BEZEL = '#1c1f24', SCREEN = '#0b0d10';
+const FLOOR = '#f4f2ec', WALL = '#f7f5f0', BASE = '#cfc9bd', WOOD = '#c4a882', DARK = '#3a3f46', CHAIR = '#3a3f46', BEZEL = '#1c1f24';
 /** Department tint at 12% over the floor colour. */
 function tint(hex: string, a = 0.12) { return '#' + new THREE.Color(FLOOR).lerp(new THREE.Color(hex), a).getHexString(); }
 
@@ -37,20 +38,6 @@ function plant(x: number, z: number, s = 1) {
   g.position.set(x, 0, z); return g;
 }
 
-function desk(x: number, z: number, accent: string) {
-  const g = new THREE.Group();
-  g.add(box(2.2, 0.08, 1.0, WOOD, 0, 0.72, 0));
-  for (const [lx, lz] of [[-1, -0.42], [1, -0.42], [-1, 0.42], [1, 0.42]]) g.add(box(0.08, 0.72, 0.08, DARK, lx, 0, lz));
-  g.add(box(0.9, 0.55, 0.06, BEZEL, 0, 0.86, -0.3)); // monitor
-  const scr = box(0.82, 0.47, 0.01, SCREEN, 0, 0.9, -0.265, false); g.add(scr);
-  g.add(box(0.1, 0.06, 0.1, DARK, 0, 0.8, -0.3));
-  g.add(box(0.5, 0.02, 0.18, '#d9d6cf', 0, 0.8, 0.05)); // keyboard
-  g.add(box(0.5, 0.012, 0.9, accent, -0.82, 0.8, 0, false)); // slim dept stripe // dept accent cube
-  // chair
-  g.add(box(0.6, 0.08, 0.6, CHAIR, 0, 0.42, 0.75)); g.add(box(0.6, 0.6, 0.08, CHAIR, 0, 0.5, 1.05)); g.add(box(0.08, 0.42, 0.08, DARK, 0, 0, 0.75));
-  g.position.set(x, 0, z); return { g, screen: scr };
-}
-
 export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): OfficeHandles {
   const blinkers: THREE.Mesh[] = [];
   const updaters: ((t: number) => void)[] = [];
@@ -74,9 +61,8 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
     const z = ZONES[m.dept];
     const rug = carpetWithLetters(renderer, 6, 5, tint(m.color), m.dept);
     rug.position.set(z.x, 0.01, z.z); scene.add(rug);
-    const d = desk(z.x, z.z - 0.75, m.color); scene.add(d.g);
-    const glow = d.screen.material = new THREE.MeshBasicMaterial({ color: '#1e293b' });
-    (d.screen as any).userData.mat = glow;
+    const st = buildStation(STATIONS[m.id] ?? DEFAULT_STATION, m.color === '#1a1a1a' ? '#f59e0b' : m.color, renderer, TEAM.indexOf(m));
+    st.g.position.set(z.x, 0, z.z - 0.75); scene.add(st.g); updaters.push(st.update);
     scene.add(accessoryDecor(m.accessory, z.x - 2.4, z.z - 1.9, m.color));
   }
 
@@ -84,13 +70,21 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   const L = LEAD_OFFICE; const cx = (L.x0 + L.x1) / 2, cz = (L.z0 + L.z1) / 2;
   const rug = carpetWithLetters(renderer, L.x1 - L.x0, L.z1 - L.z0, tint('#2563eb', 0.08), 'Ops · Lead');
   rug.position.set(cx, 0.012, cz); scene.add(rug);
-  const ld = desk(-16, -11.35, '#6b7280'); scene.add(ld.g);
-  ld.screen.material = new THREE.MeshBasicMaterial({ color: '#1e293b' });
-  const glass = new THREE.MeshLambertMaterial({ color: '#9eb7c8', transparent: true, opacity: 0.18, depthWrite: false });
-  const frame = matte('#ffffff');
+  const leadM = TEAM.find((t) => t.lead)!;
+  const ls = buildStation(STATIONS[leadM.id] ?? DEFAULT_STATION, '#60a5fa', renderer, 0);
+  ls.g.position.set(-16, 0, -11.35); scene.add(ls.g); updaters.push(ls.update);
+  const glass = new THREE.MeshPhysicalMaterial({ color: '#b8c9d6', transparent: true, opacity: 0.16, roughness: 0.08, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05, depthWrite: false, side: THREE.DoubleSide });
+  const frame = matte('#e6e9ec');
   const pane = (w: number, d: number, x: number, z: number) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, 2.2, d), glass); p.position.set(x, 1.1, z); scene.add(p); for (const yy of [0.02, 2.22]) { const f = new THREE.Mesh(new THREE.BoxGeometry(w + 0.05, 0.06, d + 0.05), frame); f.position.set(x, yy, z); f.castShadow = true; scene.add(f); }  };
   pane(0.06, 7 - 2.0, L.x1, L.z0 + 2.5);   // east wall with door gap near south end
   pane(8, 0.06, cx, L.z1);                   // south wall
+  // fishbowl curtain wall: glass on south + east, with an entry gap; slim dark posts
+  const post = (x: number, z: number) => scene.add(box(0.1, 2.6, 0.1, '#2b2f36', x, 0, z));
+  const fish = (w: number, d: number, x: number, z: number) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, d), glass); p.position.set(x, 1.2, z); p.renderOrder = 2; scene.add(p); for (const yy of [0, 2.4]) { const f = box(w + 0.04, 0.07, d + 0.04, '#e6e9ec', x, yy, z, false); scene.add(f); } };
+  for (let x = -20; x < 20; x += 5) { if (x === 0) continue; fish(5, 0.05, x + 2.5, 14.15); post(x, 14.15); } post(20, 14.15);
+  for (let z = -14; z < 14; z += 4) { if (z === -2) continue; fish(0.05, 4, 20.15, z + 2); post(20.15, z); } post(20.15, 14);
+  // glass ribs between lounge and work zones
+  for (const z of [-5, 1]) { fish(0.05, 2.2, -11.8, z + 0.5); }
   scene.add(box(1.4, 0.7, 0.5, WOOD, -18.8, 0, -13.4)); // credenza
   scene.add(plant(-19.2, -8, 0.9));
   // handoff tray

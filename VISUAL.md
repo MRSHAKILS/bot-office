@@ -54,3 +54,6 @@ A calm, premium **isometric ops floor** — closer to a Linear/Notion/Vercel sta
 
 ## Done when
 Desktop + phone screenshots look like a product marketing still; all 10 bots readable; working bots at desks; idle bots spaced in lounge; usage board legible; password gate polished.
+
+## Fishbowl + stations
+Glass curtain on south/east, per-bot stations (stations.ts) and bot outfits (styles.ts). See docs/UPGRADE-NOTES.md.

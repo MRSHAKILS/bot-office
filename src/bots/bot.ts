@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { box, matte } from '../office/materials';
+import { BOT_STYLES } from './styles';
 import type { TeamMember, Accessory } from './team';
 import type { BotState } from '../api/status';
 import { AISLES_Z, CORRIDORS_X, deskEntry, deskSeat, HANDOFF_POINT, LEAD_DOOR, LEAD_SEAT } from '../office/layout';
@@ -45,6 +46,7 @@ export class Bot {
     if (m.color === '#1a1a1a') this.body.add(box(0.06, 0.06, 0.02, '#d9d4ca', -0.08, 1.08, 0.156, false), box(0.06, 0.06, 0.02, '#d9d4ca', 0.08, 1.08, 0.156, false));
     this.armL = mk(0.12, 0.42, 0.14, -0.29, 0.88, 0); this.armR = mk(0.12, 0.42, 0.14, 0.29, 0.88, 0);
     this.body.add(this.armL, this.armR);
+    BOT_STYLES[m.short]?.(this.body, this.head, col, [this.armL, this.armR], [this.legL, this.legR]);
     const acc = accessoryMesh(m.accessory, col);
     if (m.accessory === 'backpack') { acc.position.set(0, 0.48, -0.22); this.body.add(acc); }
     else { acc.position.set(0.02, -0.42, 0.1); this.armR.add(acc); }

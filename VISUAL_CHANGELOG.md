@@ -12,3 +12,6 @@
 - Password gate: centred white card, large title, blue primary button, blurred backdrop.
 - Usage board: white panel, blue top rule, #111827 large figure, no-mipmap text.
 - Unchanged: desk snap logic in bots/bot.ts, Worker API, TEAM ids/colours, `simulated` flag in apply().
+
+## 2026-10-30
+- Fishbowl glass curtain, per-bot workstations with RGB underglow + animated screens, per-bot outfits.
