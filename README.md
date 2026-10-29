@@ -1,8 +1,14 @@
-# Bot Office
+﻿# Bot Office
 
 Live **isometric ops floor** for a Grok Bot roster — Vite + Three.js front end, Cloudflare Worker + SQLite Durable Object for real status and usage.
 
 **Live demo:** [bot-office.work-ahmedshakil.workers.dev](https://bot-office.work-ahmedshakil.workers.dev) (password-gated; password is not published here)
+
+## Preview
+
+![Bot Office walkthrough](docs/demo/office-preview.gif)
+
+Short clip: [docs/demo/office-walkthrough.mp4](docs/demo/office-walkthrough.mp4) · earlier slideshow: [docs/demo/simulation-preview.mp4](docs/demo/simulation-preview.mp4)
 
 ## Screenshots
 
@@ -13,10 +19,6 @@ Live **isometric ops floor** for a Grok Bot roster — Vite + Three.js front end
 | Live status feed | Phone |
 |---|---|
 | ![Live status](docs/screenshots/desktop-live-status.png) | ![Phone](docs/screenshots/phone.png) |
-
-## Demo video
-
-[docs/demo/simulation-preview.mp4](docs/demo/simulation-preview.mp4) — short slideshow assembled from screenshots (placeholder until a full screen capture is added).
 
 ## Features
 
