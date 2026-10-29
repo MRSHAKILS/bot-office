@@ -1,0 +1,2 @@
+OFFICE_SITE_PASSWORD=change-me
+STATUS_PUSH_TOKEN=generate-with-openssl-rand-hex-32
