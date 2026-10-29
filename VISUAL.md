@@ -56,3 +56,12 @@ Desktop screenshots look like a product marketing still; all 11 bots readable; w
 
 ## Fishbowl + stations
 Glass curtain on south/east, per-bot stations (stations.ts) and bot outfits (styles.ts). See docs/UPGRADE-NOTES.md.
+
+## v3 additions (2026-10-30)
+- **Floor:** `FLOOR_BOUNDS` in `src/office/layout.ts` (x −20..22, z −14..15), 2×2u matte tiles with ±1.5% tone variation.
+- **Zones:** 3×3 grid + **Software** (x 16.8, z 4) east of Bot Lab. Every bot has its own carpet; `seatOffset` stays as an optional utility but no bot uses it.
+- **Glass:** 3.6u tall (fishbowl, lead office, ribs); posts 3.7u; back walls 3.7u with a cornice.
+- **Wall art (`src/office/wallArt.ts`):** max 6 pieces, cream mat, muted frame #5c5750, big margins. Public titles only; never contact info, numbers or unpublished research.
+- **Materials:** `matte()` = MeshStandardMaterial, roughness 0.72–0.88, metalness 0; `box()` has bevelled edges; studio IBL at 0.35 + hemi 1.7 + sun 1.15.
+- **Bots:** sculpted stylized humanoids. Team colour on torso and arms, darker shade on legs and hair, a lighter tint on head and cuffs.
+- **Controls:** LEFT = pan (ground plane), RIGHT = rotate (limited), wheel = zoom; touch 1 = pan, 2 = zoom/rotate.

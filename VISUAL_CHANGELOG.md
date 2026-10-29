@@ -17,3 +17,10 @@
 - Fishbowl glass curtain, per-bot workstations with RGB underglow + animated screens, per-bot outfits.
 --- MOTION note ---
 - Motion system: see MOTION.md (walk gait, sit ease, desk typing/idle breathe; no snap under 28u).
+
+## 2026-10-30 — v3 fidelity + layout pass
+- Layout: slab expanded to x −20..22, z −14..15 (`FLOOR_BOUNDS`); SWE moved to its own **Software** zone (16.8, 4) with its own carpet; Engineering is Mibot-only again. Extra corridor x 20.6.
+- Glass: fishbowl, lead-office and ribs raised to 3.6u (back walls 3.7u + cornice); camera fit uses y 3.8.
+- Controls: left-drag pans on the ground plane, right-drag orbits within ±34° yaw / narrow tilt, target clamped to the slab.
+- Wall art: 5 framed gallery pieces (MathScriber AI, Gargantua, ChashiBhAI + 2 stack posters). Titles only.
+- Fidelity: bevelled boxes everywhere, matte PBR (Standard, roughness 0.72–0.88) + low studio IBL; tiled floor with tone variation; sculpted humanoid bots (capsule limbs w/ elbows, hands, tapered torso, round head, hair cap, belt/collar folds).

@@ -14,5 +14,5 @@ export const TEAM: TeamMember[] = [
   { id: '9af0c291-72b5-4478-b261-1f6717350ee8', name: 'Mibot', role: 'Engineering · GitHub', short: 'Mibot', color: '#9ca3af', dept: 'Engineering', accessory: 'laptop' },
   { id: 'a659b8f6-fe6f-4387-8e5b-62834e2f4df3', name: 'Ram-Hunt', role: 'Hardware · RAM stock hunter', short: 'Ram-Hunt', color: '#d946ef', dept: 'Hardware', accessory: 'ram' },
   { id: 'f585d306-3c01-4457-97ed-e2f4a2c5fae1', name: 'dr eggbot', role: 'Bot Lab · bot designer', short: 'eggbot', color: '#ef4444', dept: 'Bot Lab', accessory: 'flask' },
-  { id: '7af8ff89-8acc-4ce2-9c97-2d5928e14400', name: 'SWE', role: 'Software engineer · code, deploys', short: 'SWE', color: '#0ea5e9', dept: 'Engineering', accessory: 'laptop', seatOffset: { x: 0.8, z: 1.9 } },
+  { id: '7af8ff89-8acc-4ce2-9c97-2d5928e14400', name: 'SWE', role: 'Software engineer · code, deploys', short: 'SWE', color: '#0ea5e9', dept: 'Software', accessory: 'laptop' },
 ];

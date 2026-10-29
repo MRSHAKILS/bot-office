@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { box, matte, canvasTexture } from './materials';
-import { ZONES, LEAD_OFFICE, deskOrigin } from './layout';
+import { ZONES, LEAD_OFFICE, FLOOR_BOUNDS, deskOrigin } from './layout';
+import { wallArt } from './wallArt';
 import { TEAM } from '../bots/team';
 import { STATIONS, DEFAULT_STATION, buildStation } from './stations';
 
@@ -22,7 +23,7 @@ function carpetWithLetters(renderer: THREE.WebGLRenderer, w: number, d: number, 
     // lettering at the front band, left of the side entry lane
     c.fillText(text.toUpperCase(), c.canvas.width * 0.42, c.canvas.height - fs * 0.9);
   }, renderer);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshLambertMaterial({ map: tex }));
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0 }));
   tex.generateMipmaps = false; tex.minFilter = THREE.LinearFilter;
   m.rotation.x = -Math.PI / 2; m.receiveShadow = true;
   return m;
@@ -42,18 +43,27 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   const blinkers: THREE.Mesh[] = [];
   const updaters: ((t: number) => void)[] = [];
   // floor
-  const grid = canvasTexture(2048, 1434, (c) => {
-    c.fillStyle = FLOOR; c.fillRect(0, 0, c.canvas.width, c.canvas.height);
-    c.strokeStyle = '#ddd8ce'; c.lineWidth = 1.5; const step = c.canvas.width / 40;
-    for (let i = 1; i < 40; i++) { c.beginPath(); c.moveTo(i * step, 0); c.lineTo(i * step, c.canvas.height); c.stroke(); }
-    for (let j = 1; j < 28; j++) { c.beginPath(); c.moveTo(0, j * step); c.lineTo(c.canvas.width, j * step); c.stroke(); }
+  const F = FLOOR_BOUNDS, FW = F.x1 - F.x0, FD = F.z1 - F.z0, FX = (F.x0 + F.x1) / 2, FZ = (F.z0 + F.z1) / 2;
+  const PX = 48; // texels per unit
+  const grid = canvasTexture(FW * PX, FD * PX, (c) => {
+    // large-format matte tiles: subtle per-tile tone variation + hairline joints
+    for (let i = 0; i < FW / 2; i++) for (let j = 0; j < FD / 2; j++) {
+      const v = (Math.sin(i * 12.9898 + j * 78.233) * 43758.5453) % 1; const k = Math.abs(v) * 0.03 - 0.015;
+      c.fillStyle = '#' + new THREE.Color(FLOOR).offsetHSL(0, 0, k).getHexString(); c.fillRect(i * 2 * PX, j * 2 * PX, 2 * PX, 2 * PX);
+    }
+    c.strokeStyle = '#ddd8ce'; c.lineWidth = 1.5;
+    for (let i = 1; i < FW / 2; i++) { c.beginPath(); c.moveTo(i * 2 * PX, 0); c.lineTo(i * 2 * PX, c.canvas.height); c.stroke(); }
+    for (let j = 1; j < FD / 2; j++) { c.beginPath(); c.moveTo(0, j * 2 * PX); c.lineTo(c.canvas.width, j * 2 * PX); c.stroke(); }
   }, renderer);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 28), new THREE.MeshLambertMaterial({ map: grid.tex }));
-  scene.add(box(40.4, 0.4, 28.4, '#dcd8cf', 0, -0.4, 0, false)); // slab edge
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FD), new THREE.MeshStandardMaterial({ map: grid.tex, roughness: 0.85, metalness: 0 }));
+  floor.position.set(FX, 0, FZ);
+  scene.add(box(FW + 0.4, 0.4, FD + 0.4, '#dcd8cf', FX, -0.4, FZ, false)); // slab edge
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-  // back walls (low so the view stays open)
-  scene.add(box(40, 2.6, 0.3, WALL, 0, 0, -14.15)); scene.add(box(0.3, 2.6, 28, WALL, -20.15, 0, 0));
-  scene.add(box(40, 0.18, 0.34, BASE, 0, 0, -13.98, false)); scene.add(box(0.34, 0.18, 28, BASE, -19.98, 0, 0, false)); // baseboard
+  // back walls (match the taller glass; they sit behind the camera's view line)
+  const WH = 3.7;
+  scene.add(box(FW, WH, 0.3, WALL, FX, 0, F.z0 - 0.15)); scene.add(box(0.3, WH, FD, WALL, F.x0 - 0.15, 0, FZ));
+  scene.add(box(FW, 0.18, 0.34, BASE, FX, 0, F.z0 + 0.02, false)); scene.add(box(0.34, 0.18, FD, BASE, F.x0 + 0.02, 0, FZ, false)); // baseboard
+  scene.add(box(FW, 0.06, 0.36, '#e6e2d9', FX, WH - 0.06, F.z0 - 0.1, false)); scene.add(box(0.36, 0.06, FD, '#e6e2d9', F.x0 - 0.1, WH - 0.06, FZ, false)); // cornice
 
   // department zones
   for (const m of TEAM) {
@@ -75,16 +85,19 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   ls.g.position.set(-16, 0, -11.35); scene.add(ls.g); updaters.push(ls.update);
   const glass = new THREE.MeshPhysicalMaterial({ color: '#b8c9d6', transparent: true, opacity: 0.16, roughness: 0.08, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05, depthWrite: false, side: THREE.DoubleSide });
   const frame = matte('#e6e9ec');
-  const pane = (w: number, d: number, x: number, z: number) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, 2.2, d), glass); p.position.set(x, 1.1, z); scene.add(p); for (const yy of [0.02, 2.22]) { const f = new THREE.Mesh(new THREE.BoxGeometry(w + 0.05, 0.06, d + 0.05), frame); f.position.set(x, yy, z); f.castShadow = true; scene.add(f); }  };
+  const GH = 3.6; // tall glass (was 2.2–2.4)
+  const pane = (w: number, d: number, x: number, z: number) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, GH, d), glass); p.position.set(x, GH / 2, z); p.renderOrder = 2; scene.add(p); for (const yy of [0.02, GH + 0.02]) { const f = new THREE.Mesh(new THREE.BoxGeometry(w + 0.05, 0.06, d + 0.05), frame); f.position.set(x, yy, z); f.castShadow = true; scene.add(f); }  };
   pane(0.06, 7 - 2.0, L.x1, L.z0 + 2.5);   // east wall with door gap near south end
   pane(8, 0.06, cx, L.z1);                   // south wall
   // fishbowl curtain wall: glass on south + east, with an entry gap; slim dark posts
-  const post = (x: number, z: number) => scene.add(box(0.1, 2.6, 0.1, '#2b2f36', x, 0, z));
-  const fish = (w: number, d: number, x: number, z: number) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, d), glass); p.position.set(x, 1.2, z); p.renderOrder = 2; scene.add(p); for (const yy of [0, 2.4]) { const f = box(w + 0.04, 0.07, d + 0.04, '#e6e9ec', x, yy, z, false); scene.add(f); } };
-  for (let x = -20; x < 20; x += 5) { if (x === 0) continue; fish(5, 0.05, x + 2.5, 14.15); post(x, 14.15); } post(20, 14.15);
-  for (let z = -14; z < 14; z += 4) { if (z === -2) continue; fish(0.05, 4, 20.15, z + 2); post(20.15, z); } post(20.15, 14);
+  const post = (x: number, z: number) => scene.add(box(0.1, GH + 0.1, 0.1, '#2b2f36', x, 0, z));
+  for (const [px, pz] of [[L.x1, L.z1], [L.x1, L.z0 + 5]]) post(px, pz); // lead office corner posts
+  const fish = (w: number, d: number, x: number, z: number) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, GH, d), glass); p.position.set(x, GH / 2, z); p.renderOrder = 2; scene.add(p); for (const yy of [0, GH]) { const f = box(w + 0.04, 0.07, d + 0.04, '#e6e9ec', x, yy, z, false); scene.add(f); } };
+  const SZ = F.z1 + 0.15, EX = F.x1 + 0.15;
+  for (let i = 0; i < 7; i++) { const x = F.x0 + i * FW / 7; if (i !== 3) fish(FW / 7, 0.05, x + FW / 14, SZ); post(x, SZ); } post(F.x1, SZ);   // south: entry gap at the break room
+  for (let i = 0; i < 7; i++) { const z = F.z0 + i * FD / 7; if (i !== 3) fish(0.05, FD / 7, EX, z + FD / 14); post(EX, z); } post(EX, F.z1);   // east: gap mid-wall
   // glass ribs between lounge and work zones
-  for (const z of [-5, 1]) { fish(0.05, 2.2, -11.8, z + 0.5); }
+  for (const z of [-5, 1]) { fish(0.05, 2.2, -11.8, z + 0.5); } // low-height ribs keep their 2.2 footprint, full glass height
   scene.add(box(1.4, 0.7, 0.5, WOOD, -18.8, 0, -13.4)); // credenza
   scene.add(plant(-19.2, -8, 0.9));
   // handoff tray
@@ -124,12 +137,12 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   const screens = researchScreens(renderer);
   screens.meshes.forEach((m) => scene.add(m));
   updaters.push(screens.update);
-  scene.add(plant(19.2, 0.4)); scene.add(plant(13.6, -13.2, 0.9));
+  scene.add(plant(20.4, 10.2, 0.9)); scene.add(plant(13.6, -13.2, 0.9));
   scene.add(box(2.4, 0.08, 1.0, WOOD, 16.5, 0.72, -9.4)); scene.add(box(0.1, 0.72, 0.8, DARK, 15.4, 0, -9.4)); scene.add(box(0.1, 0.72, 0.8, DARK, 17.6, 0, -9.4));
 
   // decor
   scene.add(plant(-11, -13.2)); scene.add(plant(12.6, 7.6, 0.9)); // 8 plants total
-  for (const x of [-4, 6]) scene.add(box(1.6, 1.0, 0.05, '#e5e7eb', x, 1.1, -13.9, false)); // wall art
+  wallArt(scene, renderer); // ≤6 calm gallery pieces (public portfolio titles + stack)
 
   return { blinkers, update(t) {
     for (const b of blinkers) {

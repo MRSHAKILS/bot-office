@@ -11,3 +11,7 @@ bot-office-secrets.env
 bot-office-status.env
 *.tgz
 .wrangler-bundle/
+
+.cf-api-token
+deploy-out.txt
+

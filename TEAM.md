@@ -9,8 +9,8 @@
 | 5 | Victoria | Deadlines tracker | violet `#8b5cf6`* | Deadlines | clock | |
 | 6 | Mentor | Personal growth mentor | green `#22c55e`* | Growth | whiteboard marker | also owns QA interview prep |
 | 7 | Fitness | Health & fitness coach | orange `#f97316` | Health | water bottle | |
-| 8 | Mibot | Engineering · GitHub | light gray `#9ca3af` | Engineering (front desk) | laptop | lighter than Alfred so they differ |
-| 9 | SWE | Software engineer — code, deploys | sky `#0ea5e9` | Engineering (back desk, `seatOffset`) | laptop | hoodie; shares the Engineering zone |
+| 8 | Mibot | Engineering · GitHub | light gray `#9ca3af` | Engineering | laptop | lighter than Alfred so they differ |
+| 9 | SWE | Software engineer — code, deploys | sky `#0ea5e9` | Software (own zone, east of Bot Lab) | laptop | hoodie; no longer shares Engineering |
 | 10 | Ram-Hunt | Hardware · RAM stock hunter | magenta `#d946ef` | Hardware | SO-DIMM stick | |
 | 11 | dr eggbot | Bot Lab · bot designer | red `#ef4444` | Bot Lab | flask | |
 

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { box, matte } from '../office/materials';
+import { box, matte, limb } from '../office/materials';
+const sph = (r: number, c: string, x: number, y: number, z: number) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), matte(c)); m.position.set(x, y, z); m.castShadow = true; return m; };
+const tor = (r: number, t: number, c: string, x: number, y: number, z: number, sz = 1, sx = 1) => { const m = new THREE.Mesh(new THREE.TorusGeometry(r, t, 8, 24), matte(c)); m.rotation.x = Math.PI / 2; m.scale.set(sx, sz, 1); m.position.set(x, y, z); return m; };
 import { BOT_STYLES } from './styles';
 import type { TeamMember, Accessory } from './team';
 import type { BotState } from '../api/status';
@@ -41,14 +43,26 @@ export class Bot {
     this.speedMul = 0.92 + hash01(m.id + 'spd') * 0.16;
     const col = m.color;
     this.body = new THREE.Group(); this.group.add(this.body);
-    const mk = (w: number, h: number, d: number, x: number, y: number, z: number, c = col) => { const g = new THREE.Group(); const b = box(w, h, d, c, 0, -h, 0); g.add(b); g.position.set(x, y, z); return g; };
-    this.legL = mk(0.16, 0.42, 0.18, -0.1, 0.42, 0); this.legR = mk(0.16, 0.42, 0.18, 0.1, 0.42, 0);
+    // Sculpted stylized humanoid: capsule limbs w/ elbows + hands, tapered torso, pelvis, neck, round head, hair cap, fabric folds.
+    const c0 = new THREE.Color(col), dark = '#' + c0.clone().multiplyScalar(0.72).getHexString(), light = '#' + c0.clone().lerp(new THREE.Color('#ffffff'), 0.35).getHexString();
+    const skin = '#' + c0.clone().lerp(new THREE.Color('#e8d9c8'), 0.55).getHexString();
+    const pivot = (x: number, y: number, z: number) => { const g = new THREE.Group(); g.position.set(x, y, z); return g; };
+    const mkLeg = (x: number) => { const g = pivot(x, 0.42, 0); g.add(limb(0.085, 0.24, dark, 0, 0, 0, 0.8)); g.add(limb(0.072, 0.22, dark, 0, -0.2, 0.005, 0.8)); g.add(sph(0.075, dark, 0, -0.21, 0.01)); return g; };
+    const mkArm = (x: number) => { const g = pivot(x, 0.88, 0); g.add(sph(0.075, col, 0, -0.02, 0)); g.add(limb(0.062, 0.24, col, 0, 0, 0, 0.7)); g.add(limb(0.054, 0.22, col, 0, -0.21, 0.01, 0.7)); g.add(tor(0.056, 0.014, light, 0, -0.4, 0.01)); g.add(sph(0.058, skin, 0, -0.46, 0.015)); return g; };
+    this.legL = mkLeg(-0.1); this.legR = mkLeg(0.1);
     this.body.add(this.legL, this.legR);
-    this.body.add(box(0.44, 0.48, 0.26, col, 0, 0.42, 0));
-    this.body.add(box(0.34, 0.32, 0.3, col, 0, 0.92, 0));
-    this.body.add(box(0.06, 0.06, 0.02, '#20242a', -0.08, 1.08, 0.155, false), box(0.06, 0.06, 0.02, '#20242a', 0.08, 1.08, 0.155, false));
-    if (m.color === '#1a1a1a') this.body.add(box(0.06, 0.06, 0.02, '#d9d4ca', -0.08, 1.08, 0.156, false), box(0.06, 0.06, 0.02, '#d9d4ca', 0.08, 1.08, 0.156, false));
-    this.armL = mk(0.12, 0.42, 0.14, -0.29, 0.88, 0); this.armR = mk(0.12, 0.42, 0.14, 0.29, 0.88, 0);
+    this.body.add(box(0.36, 0.14, 0.24, dark, 0, 0.38, 0)); // pelvis
+    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.22, 6, 16), matte(col, 0.68)); torso.scale.set(1.18, 1, 0.72); torso.position.set(0, 0.69, 0); torso.castShadow = true; this.body.add(torso);
+    this.body.add(tor(0.195, 0.022, dark, 0, 0.5, 0, 0.72, 1.12)); // belt fold
+    this.body.add(tor(0.13, 0.018, light, 0, 0.9, 0, 0.75, 1)); // collar
+    this.body.add(box(0.03, 0.16, 0.01, dark, 0.07, 0.6, 0.142, false), box(0.03, 0.12, 0.01, dark, -0.09, 0.66, 0.14, false)); // shirt creases
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.1, 12), matte(skin)); neck.position.set(0, 0.95, 0); this.body.add(neck);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 24, 18), matte(light, 0.6)); head.scale.set(0.94, 1.04, 0.98); head.position.set(0, 1.08, 0); head.castShadow = true; this.body.add(head);
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.178, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), matte(dark, 0.9)); hair.position.set(0, 1.1, -0.012); hair.rotation.x = -0.35; this.body.add(hair);
+    const eyeC = m.color === '#1a1a1a' ? '#d9d4ca' : '#20242a';
+    this.body.add(sph(0.022, eyeC, -0.06, 1.09, 0.152), sph(0.022, eyeC, 0.06, 1.09, 0.152));
+    this.body.add(box(0.07, 0.012, 0.01, dark, 0, 1.02, 0.158, false)); // mouth line
+    this.armL = mkArm(-0.29); this.armR = mkArm(0.29);
     this.body.add(this.armL, this.armR);
     BOT_STYLES[m.short]?.(this.body, this.head, col, [this.armL, this.armR], [this.legL, this.legR]);
     const acc = accessoryMesh(m.accessory, col);

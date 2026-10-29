@@ -36,7 +36,7 @@ export const STATIONS: Record<string, Station> = {
   'a659b8f6-fe6f-4387-8e5b-62834e2f4df3': { monitors: [{ kind: 'flat', w: 0.5, h: 0.32, offsetX: -0.6, yaw: 0.25 }, { kind: 'flat', w: 0.5, h: 0.32, offsetX: 0 }, { kind: 'flat', w: 0.5, h: 0.32, offsetX: 0.6, yaw: -0.25 }], tower: { kind: 'gaming', led: '#d946ef' }, underglow: '#d946ef', screenTheme: 'hardware', desk: { finish: 'steel' }, chair: 'gaming', props: ['ram', 'headphones'] },
   // eggbot
   'f585d306-3c01-4457-97ed-e2f4a2c5fae1': { monitors: [{ kind: 'flat', w: 0.7, h: 0.44, offsetX: -0.4, yaw: 0.1 }, { kind: 'flat', w: 0.7, h: 0.44, offsetX: 0.4, yaw: -0.1 }], tower: { kind: 'lab', led: '#ef4444' }, underglow: '#ef4444', screenTheme: 'lab', desk: { finish: 'white' }, chair: 'stool', props: ['flask', 'lamp'] },
-  // SWE – second Engineering desk (back row)
+  // SWE – Software zone (own carpet, east of Bot Lab)
   '7af8ff89-8acc-4ce2-9c97-2d5928e14400': { monitors: [{ kind: 'flat', w: 0.66, h: 0.42, offsetX: -0.36, yaw: 0.12 }, { kind: 'flat', w: 0.66, h: 0.42, offsetX: 0.36, yaw: -0.12 }], tower: { kind: 'gaming', led: '#0ea5e9' }, underglow: '#0ea5e9', screenTheme: 'code', desk: { finish: 'black', width: 1.8 }, chair: 'gaming', props: ['mug', 'headphones'] },
 };
 export const DEFAULT_STATION: Station = { monitors: [{ kind: 'flat', w: 0.8, h: 0.48, offsetX: 0 }], tower: { kind: 'slim', led: '#94a3b8' }, underglow: '#94a3b8', screenTheme: 'ops', desk: { finish: 'oak' }, chair: 'task', props: ['mug'] };

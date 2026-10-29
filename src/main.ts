@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { buildOffice } from './office/build';
 import { usageBoard } from './office/usageBoard';
-import { LOUNGE_SEATS } from './office/layout';
+import { LOUNGE_SEATS, FLOOR_BOUNDS } from './office/layout';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { TEAM } from './bots/team';
 import { Bot } from './bots/bot';
 import { Simulation } from './bots/simulate';
@@ -22,16 +23,29 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene(); scene.background = new THREE.Color('#e8e6e1');
-scene.add(new THREE.HemisphereLight('#ffffff', '#cfc9bd', 2.1));
+// Soft studio IBL for matte PBR (low intensity keeps the palette), plus hemi fill + one key sun.
+{ const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.35; pm.dispose(); }
+scene.add(new THREE.HemisphereLight('#ffffff', '#cfc9bd', 1.7));
 const sun = new THREE.DirectionalLight('#fffaf2', 1.15); sun.position.set(14, 30, 18); sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 4; sun.shadow.normalBias = 0.02; Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 22, bottom: -22, near: 1, far: 80 }); sun.shadow.bias = -0.0003;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 4; sun.shadow.normalBias = 0.02; Object.assign(sun.shadow.camera, { left: -28, right: 28, top: 24, bottom: -24, near: 1, far: 80 }); sun.shadow.bias = -0.0003;
 scene.add(sun);
 
 const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
 cam.position.set(34, 36, 34); cam.lookAt(0, 0, 0);
 const controls = new OrbitControls(cam, renderer.domElement);
-controls.enableRotate = true; controls.minPolarAngle = 0.6; controls.maxPolarAngle = 1.05; controls.enableDamping = true;
-controls.minZoom = 0.6; controls.maxZoom = 4; controls.screenSpacePanning = true;
+// Controls: left-drag = slide the floor plan (pan on the ground plane), right-drag = gentle orbit (±35° yaw, narrow tilt), wheel/pinch = zoom.
+controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE };
+controls.screenSpacePanning = false; // pan along XZ so the slab slides instead of lifting toward the sky
+controls.enableDamping = true; controls.dampingFactor = 0.12; controls.panSpeed = 0.9; controls.rotateSpeed = 0.45;
+controls.minPolarAngle = 0.78; controls.maxPolarAngle = 1.02;
+const AZ0 = Math.atan2(34, 34); controls.minAzimuthAngle = AZ0 - 0.6; controls.maxAzimuthAngle = AZ0 + 0.6;
+controls.minZoom = 0.6; controls.maxZoom = 4;
+// Keep the orbit target on the slab so the floor never flies off-screen.
+controls.addEventListener('change', () => {
+  const t = controls.target, B = FLOOR_BOUNDS; const cl = new THREE.Vector3(THREE.MathUtils.clamp(t.x, B.x0, B.x1), 0, THREE.MathUtils.clamp(t.z, B.z0, B.z1));
+  if (cl.x !== t.x || cl.z !== t.z || t.y !== 0) { const d = cl.clone().sub(t); t.add(d); cam.position.add(d); }
+});
 
 const office = buildOffice(scene, renderer);
 const board = usageBoard(scene, renderer);
@@ -39,8 +53,8 @@ const bots = TEAM.map((m, i) => { const b = new Bot(m, LOUNGE_SEATS[i]); scene.a
 const tags = new Tags(app, bots);
 const ui = hud(app);
 
-// Fit the whole slab (x ±20, z ±14, walls to y 2.6) in view with ~8% margin, any aspect.
-const SLAB = [-20.2, 20.2].flatMap((x) => [-14.2, 14.2].flatMap((z) => [0, 2.8].map((y) => new THREE.Vector3(x, y, z))));
+// Fit the whole slab (FLOOR_BOUNDS, walls/glass to y 3.8) in view with ~8% margin, any aspect.
+const SLAB = [FLOOR_BOUNDS.x0 - 0.2, FLOOR_BOUNDS.x1 + 0.2].flatMap((x) => [FLOOR_BOUNDS.z0 - 0.2, FLOOR_BOUNDS.z1 + 0.2].flatMap((z) => [0, 3.8].map((y) => new THREE.Vector3(x, y, z))));
 function resize() {
   const w = window.innerWidth, h = window.innerHeight; renderer.setSize(w, h, true);
   renderer.setPixelRatio(window.devicePixelRatio || 1);
