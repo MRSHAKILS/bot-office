@@ -98,9 +98,11 @@ if (new URLSearchParams(location.search).get('simulate') === '1') setSim(true);
 // ---- loop -------------------------------------------------------------------
 const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
-  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime, now = performance.now();
+  // Real-time motion even at low FPS: substep instead of clamping (clamp made slow renders walk in slow motion).
+  const dt = Math.min(clock.getDelta(), 1), t = clock.elapsedTime, now = performance.now();
   controls.update(); office.update(t);
-  for (const b of bots) b.update(dt, now);
+  const n = Math.ceil(dt / 0.05);
+  for (let i = 0; i < n; i++) for (const b of bots) b.update(dt / n, now);
   renderer.render(scene, cam);
   tags.update(cam, window.innerWidth, window.innerHeight);
 });
