@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { box, matte, canvasTexture } from './materials';
-import { ZONES, LEAD_OFFICE } from './layout';
+import { ZONES, LEAD_OFFICE, deskOrigin } from './layout';
 import { TEAM } from '../bots/team';
 import { STATIONS, DEFAULT_STATION, buildStation } from './stations';
 
@@ -58,12 +58,12 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   // department zones
   for (const m of TEAM) {
     if (m.lead) continue;
-    const z = ZONES[m.dept];
-    const rug = carpetWithLetters(renderer, 6, 5, tint(m.color), m.dept);
-    rug.position.set(z.x, 0.01, z.z); scene.add(rug);
+    const z = ZONES[m.dept]; const o = deskOrigin(m);
+    const first = TEAM.find((t) => !t.lead && t.dept === m.dept) === m; // shared zone: one rug + decor
+    if (first) { const rug = carpetWithLetters(renderer, 6, 5, tint(m.color), m.dept); rug.position.set(z.x, 0.01, z.z); scene.add(rug); }
     const st = buildStation(STATIONS[m.id] ?? DEFAULT_STATION, m.color === '#1a1a1a' ? '#f59e0b' : m.color, renderer, TEAM.indexOf(m));
-    st.g.position.set(z.x, 0, z.z - 0.75); scene.add(st.g); updaters.push(st.update);
-    scene.add(accessoryDecor(m.accessory, z.x - 2.4, z.z - 1.9, m.color));
+    st.g.position.set(o.x, 0, o.z - 0.75); scene.add(st.g); updaters.push(st.update);
+    if (first) scene.add(accessoryDecor(m.accessory, z.x - 2.4, z.z - 1.9, m.color));
   }
 
   // lead glass office

@@ -26,6 +26,36 @@ flowchart LR
   W --> DO
 ```
 
+## Orchestration
+
+```mermaid
+flowchart LR
+  subgraph Roster["Grok Bot roster (11 agents)"]
+    A["Alfred · Ops lead / chief advisor"]
+    N["niẓām · Life assistant"]
+    S1["NSU · Study buddy"]
+    L["Lamar · Other-uni study"]
+    V["Victoria · Deadlines"]
+    M["Mentor · Growth"]
+    F["Fitness · Health"]
+    MB["Mibot · Engineering / GitHub"]
+    SW["SWE · Software engineer"]
+    R["Ram-Hunt · Hardware / RAM"]
+    E["dr eggbot · Bot Lab"]
+  end
+  Roster -- "push-status.mjs<br/>Bearer STATUS_PUSH_TOKEN" --> W["Cloudflare Worker<br/>/api/status · /api/usage"]
+  C["Cron */5"] -- heartbeat --> DO
+  W --> DO[("OfficeState<br/>SQLite Durable Object")]
+  SPA["SPA (Three.js floor)"] -- "GET /api/status every 20s<br/>session cookie (password)" --> W
+  W -- "roster states + usage" --> SPA
+  G["Guest visitor"] -- "no password" --> SIM["Client-only Simulate Work<br/>(?simulate=1)"] --> SPA
+  SPA --> FL["Office floor: desks, lounge,<br/>lead office, usage board"]
+```
+
+- **Live path** — bots push `idle | working | waiting | error | done` with a Bearer token; the Worker validates against its roster and stores it in the Durable Object; logged-in browsers poll it.
+- **Guest path** — without a session the SPA gets 401 and auto-runs the simulation locally; nothing real is exposed. "Sign in for live status" opens the password gate.
+- **Heartbeat** — cron keeps feed health fresh; the HUD warns when the feed is quiet 45+ min.
+
 ## Request paths
 
 | Path | Auth | Role |

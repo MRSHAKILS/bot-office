@@ -6,7 +6,7 @@
 - Lounge: muted slate rug, charcoal sofas, styled coffee table; plants reduced to 8, pale planters, sage foliage.
 - Server LEDs use status green/blue; research screens on near-black with crisp slate/blue type.
 - Lighting: NoToneMapping (palette-accurate), white hemi + single soft sun, 2048 PCF soft shadows, tuned bias/normalBias.
-- Camera framing: projects slab corners into view space and fits with ~8% margin (3% on portrait) for any aspect — no empty bands on phone.
+- Camera framing: projects slab corners into view space and fits with ~8% margin (3% on portrait) for any aspect (desktop-first; no phone screenshots maintained).
 - Tags: white pill + hairline border, status-dot colours from spec; collision pass (working first, idle staggered up 18px, faded if still colliding); integer px.
 - HUD: secondary Simulate button bottom-centre, blue Simulation pill, amber feed chip top-right, new "N working" live chip.
 - Password gate: centred white card, large title, blue primary button, blurred backdrop.

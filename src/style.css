@@ -28,3 +28,7 @@ canvas{display:block;touch-action:none}
 .gate button.primary:hover{background:#1d4ed8}
 .gate .err{color:#ef4444;margin:0;font-size:13px}
 @media (max-width:600px){.live{bottom:auto;top:14px;right:auto;left:50%;transform:translateX(-50%)}}
+
+.bar{display:flex;gap:8px}
+.bar #signin{color:#2563eb;border-color:#bfdbfe;background:#eff6ff}
+.gate .cancel{margin-top:8px;background:none;border:none;color:#6b7280;font-size:12px;cursor:pointer;width:100%}

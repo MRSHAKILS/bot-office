@@ -15,8 +15,7 @@ A calm, premium **isometric ops floor** — closer to a Linear/Notion/Vercel sta
 - Status dots only: idle `#9ca3af` · working `#22c55e` · waiting `#eab308` · error `#ef4444` · done `#3b82f6`
 
 ## Composition
-- True isometric orthographic; default framing shows **full floor with ~8% margin** (no giant empty bands on phone).
-- Phone/portrait: fit **width** of the slab, nudge camera target so lounge + grid are both in frame; raise tag density rules (see Labels).
+- True isometric orthographic; default framing shows **full floor with ~8% margin** (desktop-first).
 - Lead glass office clearly separate; lounge as a designed seating nook (not a bot pile); server racks tidy; research wall with one sharp screen.
 - Plants sparse and sculpted (max 8). No clutter props.
 
@@ -48,12 +47,12 @@ A calm, premium **isometric ops floor** — closer to a Linear/Notion/Vercel sta
 ## Explicit anti-goals
 - Muddy beige everything the same value
 - Overlapping name tags in a bot pile
-- Tiny dollhouse floating mid-phone screen
+- Tiny dollhouse floating mid-screen
 - Neon cyberpunk, comic outlines, emoji props
 - Fake “busy” particle junk
 
 ## Done when
-Desktop + phone screenshots look like a product marketing still; all 10 bots readable; working bots at desks; idle bots spaced in lounge; usage board legible; password gate polished.
+Desktop screenshots look like a product marketing still; all 11 bots readable; working bots at desks; idle bots spaced in lounge; usage board legible; password gate polished.
 
 ## Fishbowl + stations
 Glass curtain on south/east, per-bot stations (stations.ts) and bot outfits (styles.ts). See docs/UPGRADE-NOTES.md.

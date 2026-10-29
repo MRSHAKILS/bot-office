@@ -19,6 +19,7 @@ const ROSTER: Record<string, string> = {
   '9af0c291-72b5-4478-b261-1f6717350ee8': 'Mibot',
   'a659b8f6-fe6f-4387-8e5b-62834e2f4df3': 'Ram-Hunt',
   'f585d306-3c01-4457-97ed-e2f4a2c5fae1': 'dr eggbot',
+  '7af8ff89-8acc-4ce2-9c97-2d5928e14400': 'SWE',
 };
 const STATES = new Set(['idle', 'working', 'waiting', 'error', 'done']);
 const MAX_LINE = 120;

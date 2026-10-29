@@ -111,7 +111,7 @@ export class Bot {
     const dest = this.pendingRoute?.to ?? this.path[this.path.length - 1];
     return !!dest && dest.distanceTo(to) < 0.01;
   }
-  private seat() { return this.m.lead ? LEAD_SEAT : deskSeat(this.m.dept); }
+  private seat() { return this.m.lead ? LEAD_SEAT : deskSeat(this.m); }
   private goDesk() {
     const seat = this.seat();
     const dist = this.group.position.distanceTo(seat);

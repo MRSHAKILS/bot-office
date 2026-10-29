@@ -78,22 +78,38 @@ function refreshWarning() {
   if (live && (!live.feedHealthy || Date.now() - lastActivity(live) >= QUIET_WARN_MS)) return ui.setWarn('Status feed quiet for 45+ min');
   ui.setWarn(null);
 }
+let authed = false; let guest = false; let gateOpen = false;
 async function poll() {
-  try { live = await fetchStatus(); feedError = false; if (!sim.running) apply(live, false); }
+  try { live = await fetchStatus(); feedError = false; authed = true; if (guest) { guest = false; ui.setGuest(false); } if (!sim.running) apply(live, false); }
   catch (e) {
-    if (e instanceof UnauthorizedError && import.meta.env.VITE_DEV_SKIP_AUTH !== '1') { await passwordGate(app); return poll(); }
-    feedError = true;
+    if (e instanceof UnauthorizedError && import.meta.env.VITE_DEV_SKIP_AUTH !== '1') { authed = false; live = null; enterGuest(); }
+    else feedError = true;
   }
   refreshWarning();
+}
+/** Unauthenticated visitors: public simulation + non-blocking sign-in (live feed stays password-gated). */
+function enterGuest() {
+  if (!guest) { guest = true; ui.setGuest(true); }
+  if (!sim.running && !gateOpen) setSim(true);
+}
+async function signIn() {
+  if (gateOpen) return; gateOpen = true;
+  const ok = await passwordGate(app); gateOpen = false;
+  if (ok) { authed = true; guest = false; ui.setGuest(false); setSim(false); await poll(); }
+  else if (!sim.running) setSim(true);
 }
 function setSim(on: boolean) {
   if (on && !sim.running) { feedLog.lines.length = 0; sim.start((p) => apply(p, true)); }
   if (!on && sim.running) { sim.stop(); feedLog.lines.length = 0; apply(live ?? { bots: [], feedHealthy: true }, false); }
   ui.setSim(on); refreshWarning();
 }
-ui.simBtn.addEventListener('click', () => setSim(!sim.running));
-poll(); setInterval(poll, 20000); setInterval(refreshWarning, 30000);
+ui.simBtn.addEventListener('click', () => {
+  if (sim.running && guest && !authed) { setSim(false); void signIn(); return; } // never leave guests on an empty floor
+  setSim(!sim.running);
+});
+ui.signInBtn.addEventListener('click', () => void signIn());
 if (new URLSearchParams(location.search).get('simulate') === '1') setSim(true);
+poll(); setInterval(poll, 20000); setInterval(refreshWarning, 30000);
 
 // ---- loop -------------------------------------------------------------------
 const clock = new THREE.Clock();

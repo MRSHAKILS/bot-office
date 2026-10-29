@@ -14,7 +14,10 @@ export const AISLES_Z = [-6.5, 0.5, 7.5];
 export const CORRIDORS_X = [-9.8, -2.5, 4.5, 11.5];
 export const LOUNGE_SEATS: THREE.Vector3[] = [];
 // two sofas facing a coffee table (lounge occupies x -20..-12, z 1..14)
-for (let i = 0; i < 5; i++) LOUNGE_SEATS.push(new THREE.Vector3(-18.6 + i * 1.2, 0, 4.2));
+for (let i = 0; i < 6; i++) LOUNGE_SEATS.push(new THREE.Vector3(-18.7 + i * 1.0, 0, 4.2));
 for (let i = 0; i < 5; i++) LOUNGE_SEATS.push(new THREE.Vector3(-18.6 + i * 1.2, 0, 9.4));
-export function deskSeat(dept: string) { const z = ZONES[dept]; return new THREE.Vector3(z.x, 0, z.z + 0.15); }
-export function deskEntry(dept: string) { const z = ZONES[dept]; return new THREE.Vector3(z.x + 2.6, 0, z.z + 0.15); }
+type Seated = { dept: string; seatOffset?: { x: number; z: number } };
+/** Zone origin for this member's station (shared zones use seatOffset for a second desk row). */
+export function deskOrigin(m: Seated) { const z = ZONES[m.dept], o = m.seatOffset ?? { x: 0, z: 0 }; return { x: z.x + o.x, z: z.z + o.z }; }
+export function deskSeat(m: Seated) { const o = deskOrigin(m); return new THREE.Vector3(o.x, 0, o.z + 0.15); }
+export function deskEntry(m: Seated) { const o = deskOrigin(m); return new THREE.Vector3(o.x + 2.6, 0, o.z + 0.15); }
