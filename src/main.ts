@@ -16,7 +16,7 @@ import { hud, passwordGate } from './ui/hud';
 import { feedLog } from './ui/feedlog';
 import { fetchStatus, effectiveState, lastActivity, QUIET_WARN_MS, UnauthorizedError, type StatusPayload } from './api/status';
 
-const help = document.createElement('div'); help.className = 'camera-help'; help.textContent = 'Left drag: orbit · Right drag: pan · Scroll: zoom'; document.body.append(help);
+const help = document.createElement('div'); help.className = 'camera-help'; help.textContent = 'Drag: move office · Orbit button: rotate · Scroll: zoom'; document.body.append(help);
 const app = document.getElementById('app')!;
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 // Never render below native resolution.
@@ -61,19 +61,16 @@ const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
 cam.position.set(34, 36, 34); cam.lookAt(0, 0, 0);
 const controls = new OrbitControls(cam, renderer.domElement);
 // Controls: left-drag = slide the floor plan (pan on the ground plane), right-drag = gentle orbit (Â±35Â° yaw, narrow tilt), wheel/pinch = zoom.
-controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
 controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE };
-controls.screenSpacePanning = false; // pan along XZ so the slab slides instead of lifting toward the sky
+controls.screenSpacePanning = true; // Pixel-aligned horizontal and vertical movement, independent of camera yaw.
 controls.enableDamping = true; controls.dampingFactor = 0.12; controls.panSpeed = 0.9; controls.rotateSpeed = 0.45;
 controls.minPolarAngle = 0.45; controls.maxPolarAngle = 1.25;
 const AZ0 = Math.atan2(34, 34); controls.minAzimuthAngle = AZ0 - Math.PI; controls.maxAzimuthAngle = AZ0 + Math.PI;
 controls.minZoom = 0.6; controls.maxZoom = 4;
-// Keep the orbit target on the slab so the floor never flies off-screen.
-controls.addEventListener('change', () => {
-  const t = controls.target, B = FLOOR_BOUNDS; const cl = new THREE.Vector3(THREE.MathUtils.clamp(t.x, B.x0, B.x1), 0, THREE.MathUtils.clamp(t.z, B.z0, B.z1));
-  if (cl.x !== t.x || cl.z !== t.z || t.y !== 0) { const d = cl.clone().sub(t); t.add(d); cam.position.add(d); }
-});
-
+// Do not clamp individual target axes: that cancels parts of a screen-space drag.
+// Fit office provides an explicit way to recover the original framing.
+const orbitButton = document.createElement('button'); orbitButton.textContent = 'Orbit'; orbitButton.dataset.action = 'orbit'; orbitButton.setAttribute('aria-pressed', 'false'); room.toolbar.append(orbitButton);
 const office = buildOffice(scene, renderer);
 const board = usageBoard(scene, renderer);
 const bots = TEAM.map((m, i) => { const b = new Bot(m, LOUNGE_SEATS[i]); scene.add(b.group); return b; });
@@ -101,6 +98,7 @@ window.addEventListener('resize', resize); resize();
 room.toolbar.addEventListener('click', (e) => {
  const button = (e.target as HTMLElement).closest('button'); if (!button) return;
  const action = button.dataset.action;
+ if (action === 'orbit') { const enabled = button.getAttribute('aria-pressed') !== 'true'; button.setAttribute('aria-pressed', String(enabled)); controls.mouseButtons.LEFT = enabled ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN; }
  if (action === 'fit') { controls.target.set(0,0,0); cam.position.set(34,36,34); cam.zoom = 1; cam.lookAt(0,0,0); controls.update(); resize(); }
  if (action === 'in' || action === 'out') { cam.zoom = THREE.MathUtils.clamp(cam.zoom * (action === 'in' ? 1.2 : 1/1.2), .6, 4); cam.updateProjectionMatrix(); }
  if (action === 'labels') { const hidden = app.classList.toggle('hide-labels'); button.setAttribute('aria-pressed', String(!hidden)); }

@@ -1,6 +1,6 @@
 # Required interaction and visual checks
 
-- Right mouse drag pans the entire office. Left drag orbits. Wheel zooms. Touch: one finger pans, two fingers zoom/orbit. Suppress the canvas context menu. Keep a visible control hint and working Fit office action.
+- Both left and right mouse drag pan the entire office in screen space. Orbit button toggles left-drag rotation. Do not clamp target axes during panning. Wheel zooms. Touch: one finger pans, two fingers zoom/orbit. Suppress the canvas context menu. Keep a visible control hint and working Fit office action.
 - Working bots type with both hands above a keyboard, elbows bent and tiny alternating taps. Never animate a large shoulder/arm pumping motion near the lap. Verify keyboard alignment at ordinary and tall desks close up, over time.
 - Idle bots stay still. Normal journeys never teleport. Do not invent live handoffs.
 - Floor planes must not share the slab's top depth. Keep native resolution and matte floor materials. Visually pan and orbit under each lighting preset.

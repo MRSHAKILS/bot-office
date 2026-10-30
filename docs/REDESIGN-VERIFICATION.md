@@ -12,3 +12,6 @@ Vercel routes /api/* to the existing Cloudflare Worker. This preserves the backe
 
 ## Typing and camera follow-up
 Replaced whole-arm rapid typing with articulated elbows and small alternating taps; aligned keyboards and desk-height offsets; handheld props hidden at keyboard. Restored right-drag pan, left-drag orbit, wider orbit range and context-menu suppression. Added visible mouse hints, measured label collision bounds and continuous seated-pose blending. Build and local zoomed scene inspection performed. Native right-button drag itself still requires manual verification; browser drag automation exposes no mouse-button option. No claim of exhaustive all-agent collision or live-auth verification.
+
+## Pan correction
+Both mouse buttons pan in screen space by default. Orbit toggles left-drag rotation. Removed per-axis target clamps. Visually verified a horizontal rightward drag followed by a leftward/upward drag in the local browser. This supersedes previous left-drag orbit defaults.
