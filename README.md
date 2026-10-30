@@ -111,3 +111,9 @@ Design brief: [VISUAL.md](VISUAL.md). Recent polish notes: [VISUAL_CHANGELOG.md]
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Control-room redesign
+
+The redesign branch adds a dark team directory, selected-agent details, observed activity, camera controls and a responsive Team panel. Old reports retain their reported state with a stale indicator. Demo usage is unavailable rather than invented. Normal trips no longer use distance-based teleportation; live completion does not fabricate a handoff.
+
+Vercel hosting uses vercel.json to proxy API requests to the existing Cloudflare Worker. The Durable Object remains on Cloudflare. See docs/REDESIGN-VERIFICATION.md for verification limits.
