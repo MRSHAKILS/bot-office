@@ -7,12 +7,12 @@ import { STATIONS, DEFAULT_STATION, buildStation } from './stations';
 
 export interface OfficeHandles { blinkers: THREE.Mesh[]; update(t: number): void; }
 
-const FLOOR = '#f4f2ec', WALL = '#f7f5f0', BASE = '#cfc9bd', WOOD = '#c4a882', DARK = '#3a3f46', CHAIR = '#3a3f46', BEZEL = '#1c1f24';
+const WALL = '#344454', BASE = '#243341', WOOD = '#c4a882', DARK = '#3a3f46', CHAIR = '#3a3f46', BEZEL = '#1c1f24';
 /** Department tint at 12% over the floor colour. */
-function tint(hex: string, a = 0.12) { return '#' + new THREE.Color(FLOOR).lerp(new THREE.Color(hex), a).getHexString(); }
+function tint(hex: string, a = 0.12) { return '#' + new THREE.Color('#c8d0d5').lerp(new THREE.Color(hex), a).getHexString(); }
 
 function carpetWithLetters(renderer: THREE.WebGLRenderer, w: number, d: number, base: string, text: string) {
-  const px = 256; // texels per world unit → crisp lettering
+  const px = 256; // texels per world unit â†’ crisp lettering
   const { tex } = canvasTexture(w * px / 2, d * px / 2, (c) => {
     c.fillStyle = base; c.fillRect(0, 0, c.canvas.width, c.canvas.height);
     c.strokeStyle = 'rgba(17,24,39,0.10)'; c.lineWidth = 3; c.strokeRect(10, 10, c.canvas.width - 20, c.canvas.height - 20);
@@ -46,14 +46,15 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   const F = FLOOR_BOUNDS, FW = F.x1 - F.x0, FD = F.z1 - F.z0, FX = (F.x0 + F.x1) / 2, FZ = (F.z0 + F.z1) / 2;
   const PX = 48; // texels per unit
   const grid = canvasTexture(FW * PX, FD * PX, (c) => {
-    // large-format matte tiles: subtle per-tile tone variation + hairline joints
-    for (let i = 0; i < FW / 2; i++) for (let j = 0; j < FD / 2; j++) {
-      const v = (Math.sin(i * 12.9898 + j * 78.233) * 43758.5453) % 1; const k = Math.abs(v) * 0.03 - 0.015;
-      c.fillStyle = '#' + new THREE.Color(FLOOR).offsetHSL(0, 0, k).getHexString(); c.fillRect(i * 2 * PX, j * 2 * PX, 2 * PX, 2 * PX);
+    // Staggered oak planks with restrained grain, drawn once.
+    c.fillStyle = '#9b704b'; c.fillRect(0,0,c.canvas.width,c.canvas.height);
+    for (let row=0; row<FD; row++) for(let col=-1; col<FW/5+1; col++) {
+      const x=(col*5+(row%2)*2.5)*PX, y=row*PX;
+      const v=(Math.sin(row*17+col*31)+1)/2;
+      c.fillStyle = `hsl(30, 35%, ${45+v*9}%)`; c.fillRect(x+1,y+1,5*PX-2,PX-2);
+      c.strokeStyle='rgba(70,40,20,.12)';c.lineWidth=1;
+      for(let k=1;k<5;k++){c.beginPath();c.moveTo(x+8,y+k*PX/5);c.bezierCurveTo(x+70,y+k*PX/5+3,x+150,y+k*PX/5-2,x+5*PX-8,y+k*PX/5);c.stroke();}
     }
-    c.strokeStyle = '#ddd8ce'; c.lineWidth = 1.5;
-    for (let i = 1; i < FW / 2; i++) { c.beginPath(); c.moveTo(i * 2 * PX, 0); c.lineTo(i * 2 * PX, c.canvas.height); c.stroke(); }
-    for (let j = 1; j < FD / 2; j++) { c.beginPath(); c.moveTo(0, j * 2 * PX); c.lineTo(c.canvas.width, j * 2 * PX); c.stroke(); }
   }, renderer);
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FD), new THREE.MeshStandardMaterial({ map: grid.tex, roughness: 0.85, metalness: 0 }));
   floor.position.set(FX, 0, FZ);
@@ -78,20 +79,28 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
 
   // lead glass office
   const L = LEAD_OFFICE; const cx = (L.x0 + L.x1) / 2, cz = (L.z0 + L.z1) / 2;
-  const rug = carpetWithLetters(renderer, L.x1 - L.x0, L.z1 - L.z0, tint('#2563eb', 0.08), 'Ops · Lead');
+  const rug = carpetWithLetters(renderer, L.x1 - L.x0, L.z1 - L.z0, tint('#2563eb', 0.08), 'Ops Â· Lead');
   rug.position.set(cx, 0.012, cz); scene.add(rug);
   const leadM = TEAM.find((t) => t.lead)!;
   const ls = buildStation(STATIONS[leadM.id] ?? DEFAULT_STATION, '#60a5fa', renderer, 0);
   ls.g.position.set(-16, 0, -11.35); scene.add(ls.g); updaters.push(ls.update);
   const glass = new THREE.MeshPhysicalMaterial({ color: '#b8c9d6', transparent: true, opacity: 0.16, roughness: 0.08, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05, depthWrite: false, side: THREE.DoubleSide });
   const frame = matte('#e6e9ec');
-  const GH = 3.6; // tall glass (was 2.2–2.4)
-  const pane = (w: number, d: number, x: number, z: number) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, GH, d), glass); p.position.set(x, GH / 2, z); p.renderOrder = 2; scene.add(p); for (const yy of [0.02, GH + 0.02]) { const f = new THREE.Mesh(new THREE.BoxGeometry(w + 0.05, 0.06, d + 0.05), frame); f.position.set(x, yy, z); f.castShadow = true; scene.add(f); }  };
-  pane(0.06, 7 - 2.0, L.x1, L.z0 + 2.5);   // east wall with door gap near south end
-  pane(8, 0.06, cx, L.z1);                   // south wall
+  const GH = 3.6; // tall glass (was 2.2â€“2.4)
+  // Curved enclosure, open at the east/south doorway used by the routing graph.
+  for (let i = 0; i < 32; i++) {
+    const a = Math.PI * 0.12 + i / 32 * Math.PI * 1.68;
+    const b = Math.PI * 0.12 + (i + 1) / 32 * Math.PI * 1.68;
+    const x1 = cx + Math.cos(a) * 4, z1 = cz + Math.sin(a) * 3.45;
+    const x2 = cx + Math.cos(b) * 4, z2 = cz + Math.sin(b) * 3.45;
+    const length = Math.hypot(x2-x1,z2-z1);
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(length, GH, .035), glass);
+    panel.position.set((x1+x2)/2,GH/2,(z1+z2)/2); panel.rotation.y = -Math.atan2(z2-z1,x2-x1); scene.add(panel);
+    for (const y of [.03,GH]) { const rail = new THREE.Mesh(new THREE.BoxGeometry(length,.045,.045), frame); rail.position.set(panel.position.x,y,panel.position.z); rail.rotation.y=panel.rotation.y; scene.add(rail); }
+  }
   // fishbowl curtain wall: glass on south + east, with an entry gap; slim dark posts
   const post = (x: number, z: number) => scene.add(box(0.1, GH + 0.1, 0.1, '#2b2f36', x, 0, z));
-  for (const [px, pz] of [[L.x1, L.z1], [L.x1, L.z0 + 5]]) post(px, pz); // lead office corner posts
+  for (const [px, pz] of [] as number[][]) post(px, pz); // lead office corner posts
   const fish = (w: number, d: number, x: number, z: number) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, GH, d), glass); p.position.set(x, GH / 2, z); p.renderOrder = 2; scene.add(p); for (const yy of [0, GH]) { const f = box(w + 0.04, 0.07, d + 0.04, '#e6e9ec', x, yy, z, false); scene.add(f); } };
   const SZ = F.z1 + 0.15, EX = F.x1 + 0.15;
   for (let i = 0; i < 7; i++) { const x = F.x0 + i * FW / 7; if (i !== 3) fish(FW / 7, 0.05, x + FW / 14, SZ); post(x, SZ); } post(F.x1, SZ);   // south: entry gap at the break room
@@ -142,7 +151,7 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
 
   // decor
   scene.add(plant(-11, -13.2)); scene.add(plant(12.6, 7.6, 0.9)); // 8 plants total
-  wallArt(scene, renderer); // ≤6 calm gallery pieces (public portfolio titles + stack)
+  wallArt(scene, renderer); // â‰¤6 calm gallery pieces (public portfolio titles + stack)
 
   return { blinkers, update(t) {
     for (const b of blinkers) {
@@ -195,13 +204,14 @@ function researchScreens(renderer: THREE.WebGLRenderer) {
     c.beginPath(); US.forEach(([lo, la], i) => { const [x, y] = proj(lo, la); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath();
     c.fillStyle = '#1e293b'; c.fill(); c.strokeStyle = '#60a5fa'; c.lineWidth = 3; c.stroke();
     const sx = 80 + ((t * 120) % (W - 160)); c.fillStyle = 'rgba(111,168,201,0.25)'; c.fillRect(sx, 40, 8, H - 80);
-    c.fillStyle = '#cbd5e1'; c.font = '600 30px system-ui'; c.fillText('Map view', 44, 46);
+    c.fillStyle = '#cbd5e1'; c.font = '600 30px system-ui'; c.fillText('Decorative map', 44, 46);
     // 3) terminal echoing real status lines only
     c = s3.ctx; c.fillStyle = '#11161c'; c.fillRect(0, 0, W, H);
     c.font = '500 34px ui-monospace, monospace'; c.fillStyle = '#86efac';
-    const show = lines.length ? lines.slice(-10) : ['> waiting for status feed…'];
+    const show = lines.length ? lines.slice(-10) : ['> waiting for status feedâ€¦'];
     show.forEach((l, i) => c.fillText(l.slice(0, 48), 30, 60 + i * 50));
     if (Math.floor(t * 2) % 2) c.fillRect(30, 60 + show.length * 50 - 30, 20, 36);
     s1.tex.needsUpdate = s2.tex.needsUpdate = s3.tex.needsUpdate = true;
   } };
 }
+

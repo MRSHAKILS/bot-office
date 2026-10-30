@@ -1,4 +1,7 @@
 import './style.css';
+import { controlRoom } from './ui/controlRoom';
+const room = controlRoom();
+let paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { buildOffice } from './office/build';
@@ -22,18 +25,18 @@ renderer.toneMapping = THREE.NoToneMapping; // palette-accurate, matte
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 app.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene(); scene.background = new THREE.Color('#e8e6e1');
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#081522');
 // Soft studio IBL for matte PBR (low intensity keeps the palette), plus hemi fill + one key sun.
 { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.35; pm.dispose(); }
-scene.add(new THREE.HemisphereLight('#ffffff', '#cfc9bd', 1.7));
-const sun = new THREE.DirectionalLight('#fffaf2', 1.15); sun.position.set(14, 30, 18); sun.castShadow = true;
+scene.add(new THREE.HemisphereLight('#ffffff', '#556575', 0.85));
+const sun = new THREE.DirectionalLight('#fff0d8', 1.3); sun.position.set(14, 30, 18); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 4; sun.shadow.normalBias = 0.02; Object.assign(sun.shadow.camera, { left: -28, right: 28, top: 24, bottom: -24, near: 1, far: 80 }); sun.shadow.bias = -0.0003;
 scene.add(sun);
 
 const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
 cam.position.set(34, 36, 34); cam.lookAt(0, 0, 0);
 const controls = new OrbitControls(cam, renderer.domElement);
-// Controls: left-drag = slide the floor plan (pan on the ground plane), right-drag = gentle orbit (±35° yaw, narrow tilt), wheel/pinch = zoom.
+// Controls: left-drag = slide the floor plan (pan on the ground plane), right-drag = gentle orbit (Â±35Â° yaw, narrow tilt), wheel/pinch = zoom.
 controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
 controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE };
 controls.screenSpacePanning = false; // pan along XZ so the slab slides instead of lifting toward the sky
@@ -56,7 +59,7 @@ const ui = hud(app);
 // Fit the whole slab (FLOOR_BOUNDS, walls/glass to y 3.8) in view with ~8% margin, any aspect.
 const SLAB = [FLOOR_BOUNDS.x0 - 0.2, FLOOR_BOUNDS.x1 + 0.2].flatMap((x) => [FLOOR_BOUNDS.z0 - 0.2, FLOOR_BOUNDS.z1 + 0.2].flatMap((z) => [0, 3.8].map((y) => new THREE.Vector3(x, y, z))));
 function resize() {
-  const w = window.innerWidth, h = window.innerHeight; renderer.setSize(w, h, true);
+  const w = app.clientWidth, h = app.clientHeight; renderer.setSize(w, h, true);
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   const a = w / h;
   cam.updateMatrixWorld(); const inv = cam.matrixWorldInverse;
@@ -71,6 +74,19 @@ function resize() {
   cam.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize); resize();
+room.toolbar.addEventListener('click', (e) => {
+ const button = (e.target as HTMLElement).closest('button'); if (!button) return;
+ const action = button.dataset.action;
+ if (action === 'fit') { controls.target.set(0,0,0); cam.position.set(34,36,34); cam.zoom = 1; cam.lookAt(0,0,0); controls.update(); resize(); }
+ if (action === 'in' || action === 'out') { cam.zoom = THREE.MathUtils.clamp(cam.zoom * (action === 'in' ? 1.2 : 1/1.2), .6, 4); cam.updateProjectionMatrix(); }
+ if (action === 'labels') { const hidden = app.classList.toggle('hide-labels'); button.setAttribute('aria-pressed', String(!hidden)); }
+ if (action === 'pause') { paused = !paused; button.textContent = paused ? 'Resume motion' : 'Pause motion'; button.setAttribute('aria-pressed', String(paused)); }
+});
+document.addEventListener('office-focus', e => {
+ const b = bots.find(b => b.m.id === (e as CustomEvent).detail); if (!b) return;
+ const delta = b.group.position.clone().sub(controls.target); controls.target.add(delta); cam.position.add(delta); cam.zoom = 2; cam.updateProjectionMatrix();
+});
+
 
 // ---- status wiring ----------------------------------------------------------
 const sim = new Simulation();
@@ -81,11 +97,12 @@ function apply(p: StatusPayload, simulated: boolean) {
   for (const b of bots) {
     const s = p.bots.find((x) => x.id === b.m.id || x.name === b.m.name);
     const st = effectiveState(s, now); if (st === 'working') active++;
-    const before = b.state; b.setState(st, s?.statusLine ?? '', performance.now());
-    if ((before !== st || st !== 'idle') && s?.statusLine) feedLog.push(`> ${b.m.short}: ${s.statusLine}`);
+    const before = b.state, oldLine = b.statusLine; b.setState(st, s?.statusLine ?? '', performance.now(), simulated);
+    if ((before !== st || oldLine !== s?.statusLine) && s?.statusLine) feedLog.push(`> ${b.m.short}: ${s.statusLine}`);
   }
   feedLog.activeCount = active; ui.setLive(active);
-  if (!simulated) board.set(p.usage);
+  board.set(simulated ? undefined : p.usage);
+  room.update(p, simulated);
 }
 function refreshWarning() {
   if (sim.running) return ui.setWarn(null);
@@ -128,7 +145,7 @@ ui.simBtn.addEventListener('click', () => {
 });
 ui.signInBtn.addEventListener('click', () => void signIn());
 if (forceSim) setSim(true);
-else ui.setGuest(true); // chip immediately; 401 → enterGuest starts sim
+else ui.setGuest(true); // chip immediately; 401 â†’ enterGuest starts sim
 poll(); setInterval(poll, 20000); setInterval(refreshWarning, 30000);
 
 // ---- loop -------------------------------------------------------------------
@@ -136,10 +153,10 @@ const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   // Real-time motion even at low FPS: substep instead of clamping (clamp made slow renders walk in slow motion).
   const dt = Math.min(clock.getDelta(), 1), t = clock.elapsedTime, now = performance.now();
-  controls.update(); office.update(t);
+  controls.update(); if (!paused && !document.hidden) office.update(t);
   const n = Math.ceil(dt / 0.05);
-  for (let i = 0; i < n; i++) for (const b of bots) b.update(dt / n, now);
+  for (let i = 0; i < (paused || document.hidden ? 0 : n); i++) for (const b of bots) b.update(dt / n, now);
   renderer.render(scene, cam);
-  tags.update(cam, window.innerWidth, window.innerHeight);
+  tags.update(cam, app.clientWidth, app.clientHeight);
 });
 (window as any).__office = { bots, sim }; // debug hook for screenshots

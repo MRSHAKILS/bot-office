@@ -65,13 +65,6 @@ export function poseFor(
       headY: Math.sin(t * 4.5 + phase) * 0.18,
     };
   }
-  // idle / done seated
-  return {
-    bodyY: -0.12 + breathe,
-    leg: -Math.PI / 2,
-    armL: -0.45 + Math.sin(t * 1.3 + phase) * 0.03,
-    armR: -0.45 + Math.sin(t * 1.1 + phase + 1) * 0.03,
-    leanZ: Math.sin(t * 0.55 + phase) * 0.05,
-    headY: Math.sin(t * 0.4 + phase) * 0.08,
-  };
+  // Idle poses remain completely still.
+  return { bodyY: -0.12, leg: -Math.PI / 2, armL: -0.45, armR: -0.45, leanZ: 0, headY: 0 };
 }

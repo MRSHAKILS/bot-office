@@ -16,15 +16,15 @@ export class Simulation {
         const s = this.state.get(m.id)!; const age = t - s.at;
         let next: BotState | null = null;
         if (s.state === 'idle' && Math.random() < 0.22) next = 'working';
-        else if (s.state === 'working' && age > 12000 && Math.random() < 0.18) {
+        else if (s.state === 'working' && age > 35000 && Math.random() < 0.18) {
           const r = Math.random(); next = r < 0.6 ? 'done' : r < 0.85 ? 'waiting' : 'error';
         } else if ((s.state === 'waiting' || s.state === 'error') && age > 5000) next = 'working';
-        else if (s.state === 'done' && age > 7000) next = Math.random() < 0.6 ? 'working' : 'idle';
+        else if (s.state === 'done' && age > 25000) next = Math.random() < 0.6 ? 'working' : 'idle';
         if (next) this.state.set(m.id, { state: next, at: t });
       }
       onTick({ feedHealthy: true, bots: TEAM.map((m) => {
         const s = this.state.get(m.id)!; const l = LINES[s.state];
-        return { id: m.id, name: m.name, state: s.state, statusLine: l[Math.floor(Math.random() * l.length) % l.length], updatedAt: new Date(s.at).toISOString() };
+        return { id: m.id, name: m.name, state: s.state, statusLine: l[Math.floor(s.at / 1000) % l.length], updatedAt: new Date(s.at).toISOString() };
       }) });
     };
     tick(); this.timer = window.setInterval(tick, 1400);

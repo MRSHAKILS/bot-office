@@ -8,11 +8,12 @@ export class Tags {
   constructor(parent: HTMLElement, bots: Bot[]) {
     this.root.className = 'tags'; parent.appendChild(this.root);
     for (const b of bots) {
-      const el = document.createElement('div'); el.className = 'tag';
+      const el = document.createElement('div'); el.className = 'tag'; el.tabIndex = 0; el.setAttribute('role', 'button'); el.setAttribute('aria-label', b.m.name);
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } });
       el.innerHTML = `<span class="dot"></span><span class="short"></span><div class="full"><b></b><i></i></div>`;
       (el.querySelector('.short') as HTMLElement).textContent = b.m.short;
       (el.querySelector('.full b') as HTMLElement).textContent = b.m.name + ' · ' + b.m.dept;
-      el.addEventListener('click', (e) => { e.stopPropagation(); const open = el.classList.contains('open'); this.root.querySelectorAll('.open').forEach((x) => x.classList.remove('open')); if (!open) el.classList.add('open'); });
+      el.addEventListener('click', (e) => { e.stopPropagation(); document.dispatchEvent(new CustomEvent('office-select', {detail:b.m.id})); const open = el.classList.contains('open'); this.root.querySelectorAll('.open').forEach((x) => x.classList.remove('open')); if (!open) el.classList.add('open'); });
       this.root.appendChild(el); this.els.set(b, el);
     }
     document.addEventListener('click', () => this.root.querySelectorAll('.open').forEach((x) => x.classList.remove('open')));

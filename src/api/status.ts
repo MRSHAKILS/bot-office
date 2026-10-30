@@ -19,16 +19,11 @@ export async function login(password: string): Promise<boolean> {
   try {
     const r = await fetch('/api/login', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password }) });
     return r.ok;
-  } catch { return false; }
+  } catch { throw new Error('Connection failed'); }
 }
 
-/** Effective visual state: working/waiting older than 10 min is shown as idle. */
-export function effectiveState(s: BotStatus | undefined, now = Date.now()): BotState {
-  if (!s) return 'idle';
-  const age = now - Date.parse(s.updatedAt);
-  if ((s.state === 'working' || s.state === 'waiting') && !(age < STALE_WORKING_MS)) return 'idle';
-  return s.state;
-}
+/** Preserve reported state; freshness is displayed separately. */
+export function effectiveState(s: BotStatus | undefined, _now = Date.now()): BotState { return s?.state ?? 'idle'; }
 
 /** Newest timestamp seen in the feed (bot updates or heartbeat). */
 export function lastActivity(p: StatusPayload): number {

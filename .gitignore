@@ -15,3 +15,5 @@ bot-office-status.env
 .cf-api-token
 deploy-out.txt
 
+
+.vercel/
