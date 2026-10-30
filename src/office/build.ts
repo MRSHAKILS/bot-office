@@ -56,9 +56,9 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
       for(let k=1;k<5;k++){c.beginPath();c.moveTo(x+8,y+k*PX/5);c.bezierCurveTo(x+70,y+k*PX/5+3,x+150,y+k*PX/5-2,x+5*PX-8,y+k*PX/5);c.stroke();}
     }
   }, renderer);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FD), new THREE.MeshStandardMaterial({ map: grid.tex, roughness: 0.85, metalness: 0 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FD), new THREE.MeshLambertMaterial({ map: grid.tex }));
   floor.position.set(FX, 0, FZ);
-  scene.add(box(FW + 0.4, 0.4, FD + 0.4, '#dcd8cf', FX, -0.4, FZ, false)); // slab edge
+  scene.add(box(FW + 0.4, 0.4, FD + 0.4, '#795438', FX, -0.46, FZ, false)); // slab edge
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
   // back walls (match the taller glass; they sit behind the camera's view line)
   const WH = 3.7;

@@ -28,10 +28,32 @@ app.appendChild(renderer.domElement);
 const scene = new THREE.Scene(); scene.background = new THREE.Color('#081522');
 // Soft studio IBL for matte PBR (low intensity keeps the palette), plus hemi fill + one key sun.
 { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.35; pm.dispose(); }
-scene.add(new THREE.HemisphereLight('#ffffff', '#556575', 0.85));
+const fill = new THREE.HemisphereLight('#ffffff', '#556575', 0.85); scene.add(fill);
 const sun = new THREE.DirectionalLight('#fff0d8', 1.3); sun.position.set(14, 30, 18); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 4; sun.shadow.normalBias = 0.02; Object.assign(sun.shadow.camera, { left: -28, right: 28, top: 24, bottom: -24, near: 1, far: 80 }); sun.shadow.bias = -0.0003;
 scene.add(sun);
+// World lighting only: camera movement never changes the selected atmosphere.
+const atmosphere = document.createElement('nav'); atmosphere.className = 'atmosphere'; atmosphere.setAttribute('aria-label', 'Time of day');
+const presets = {
+ day: { sky: '#dcecff', ground: '#867052', power: 1.15, sun: '#fff1d8', key: 1.5, environment: .3 },
+ evening: { sky: '#e8b9a3', ground: '#69506e', power: .75, sun: '#ffb76c', key: 1.25, environment: .2 },
+ night: { sky: '#8ba8e3', ground: '#263348', power: .48, sun: '#b2c9ff', key: .45, environment: .12 }
+};
+type Atmosphere = 'now' | keyof typeof presets;
+let atmosphereMode: Atmosphere = 'now';
+try { const saved = localStorage.getItem('office-atmosphere'); if (saved === 'now' || (saved && saved in presets)) atmosphereMode = saved as Atmosphere; } catch { /* Storage can be disabled. */ }
+function applyAtmosphere() {
+ const hour = new Date().getHours();
+ const resolved = atmosphereMode === 'now' ? (hour >= 7 && hour < 17 ? 'day' : hour >= 17 && hour < 20 ? 'evening' : 'night') : atmosphereMode;
+ const p = presets[resolved]; fill.color.set(p.sky); fill.groundColor.set(p.ground); fill.intensity = p.power; sun.color.set(p.sun); sun.intensity = p.key; scene.environmentIntensity = p.environment;
+ atmosphere.title = atmosphereMode === 'now' ? `Local time · ${resolved}` : resolved;
+ for (const button of atmosphere.querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.mode === atmosphereMode));
+}
+for (const [mode, label] of [['now','◷ Now'],['day','☀ Day'],['evening','◒ Evening'],['night','☾ Night']]) {
+ const button = document.createElement('button'); button.textContent = label; button.dataset.mode = mode; button.onclick = () => { atmosphereMode = mode as Atmosphere; try {localStorage.setItem('office-atmosphere',mode);} catch {} applyAtmosphere(); }; atmosphere.append(button);
+}
+document.body.append(atmosphere); applyAtmosphere(); setInterval(() => {if(atmosphereMode === 'now') applyAtmosphere();}, 60000);
+
 
 const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
 cam.position.set(34, 36, 34); cam.lookAt(0, 0, 0);
