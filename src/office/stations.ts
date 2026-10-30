@@ -100,7 +100,7 @@ export function buildStation(st: Station, accent: string, renderer: THREE.WebGLR
   else for (const [lx, lz] of [[-W / 2 + 0.1, -0.42], [W / 2 - 0.1, -0.42], [-W / 2 + 0.1, 0.42], [W / 2 - 0.1, 0.42]]) g.add(box(0.06, H, 0.06, st.desk.finish === 'walnut' ? '#1f1a16' : DARK, lx, 0, lz));
   if (st.desk.finish === 'walnut' || st.desk.finish === 'white') g.add(box(W - 0.3, H - 0.1, 0.04, top, 0, 0.05, -0.46)); // modesty panel
   const ty = H + 0.06;
-  g.add(box(0.5, 0.02, 0.17, '#d9d6cf', 0, ty, 0.12)); // keyboard
+  g.add(box(0.5, 0.02, 0.17, '#d9d6cf', 0, ty, 0.42)); // keyboard, aligned with seated hands
   g.add(box(0.07, 0.02, 0.11, '#d9d6cf', 0.38, ty, 0.12));
   g.add(box(0.9, 0.005, 0.4, '#1f2328', 0.1, ty, 0.12, false)); // desk mat
   // monitors

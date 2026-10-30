@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { box, matte, limb } from '../office/materials';
 const sph = (r: number, c: string, x: number, y: number, z: number) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), matte(c)); m.position.set(x, y, z); m.castShadow = true; return m; };
 const tor = (r: number, t: number, c: string, x: number, y: number, z: number, sz = 1, sx = 1) => { const m = new THREE.Mesh(new THREE.TorusGeometry(r, t, 8, 24), matte(c)); m.rotation.x = Math.PI / 2; m.scale.set(sx, sz, 1); m.position.set(x, y, z); return m; };
+import { STATIONS, DEFAULT_STATION } from '../office/stations';
 import { BOT_STYLES } from './styles';
 import type { TeamMember, Accessory } from './team';
 import type { BotState } from '../api/status';
@@ -29,6 +30,7 @@ type Place = 'lounge' | 'desk' | 'handoff';
 export class Bot {
   group = new THREE.Group();
   private legL: THREE.Object3D; private legR: THREE.Object3D; private armL: THREE.Object3D; private armR: THREE.Object3D;
+  private elbows: THREE.Group[] = []; private heldAccessory: THREE.Object3D;
   private body: THREE.Group; private parcel: THREE.Mesh;
   path: THREE.Vector3[] = []; place: Place = 'lounge'; seated = true; facing = 0;
   state: BotState = 'idle'; statusLine = ''; private walkT = 0; private handoffUntil = 0; private wantDesk = false;
@@ -48,7 +50,13 @@ export class Bot {
     const skin = '#' + c0.clone().lerp(new THREE.Color('#e8d9c8'), 0.55).getHexString();
     const pivot = (x: number, y: number, z: number) => { const g = new THREE.Group(); g.position.set(x, y, z); return g; };
     const mkLeg = (x: number) => { const g = pivot(x, 0.42, 0); g.add(limb(0.085, 0.24, dark, 0, 0, 0, 0.8)); g.add(limb(0.072, 0.22, dark, 0, -0.2, 0.005, 0.8)); g.add(sph(0.075, dark, 0, -0.21, 0.01)); return g; };
-    const mkArm = (x: number) => { const g = pivot(x, 0.88, 0); g.add(sph(0.075, col, 0, -0.02, 0)); g.add(limb(0.062, 0.24, col, 0, 0, 0, 0.7)); g.add(limb(0.054, 0.22, col, 0, -0.21, 0.01, 0.7)); g.add(tor(0.056, 0.014, light, 0, -0.4, 0.01)); g.add(sph(0.058, skin, 0, -0.46, 0.015)); return g; };
+    const mkArm = (x: number) => {
+      const g = pivot(x, 0.88, 0); g.add(sph(0.075, col, 0, -0.02, 0));
+      g.add(limb(0.062, 0.24, col, 0, 0, 0, 0.7));
+      const elbow = new THREE.Group(); elbow.position.y = -0.22;
+      elbow.add(limb(0.054, 0.24, col, 0, 0, 0, 0.7), sph(0.058, skin, 0, -0.25, 0.015));
+      g.add(elbow); this.elbows.push(elbow); return g;
+    };
     this.legL = mkLeg(-0.1); this.legR = mkLeg(0.1);
     this.body.add(this.legL, this.legR);
     this.body.add(box(0.36, 0.14, 0.24, dark, 0, 0.38, 0)); // pelvis
@@ -65,7 +73,7 @@ export class Bot {
     this.armL = mkArm(-0.29); this.armR = mkArm(0.29);
     this.body.add(this.armL, this.armR);
     BOT_STYLES[m.short]?.(this.body, this.head, col, [this.armL, this.armR], [this.legL, this.legR]);
-    const acc = accessoryMesh(m.accessory, col);
+    const acc = accessoryMesh(m.accessory, col); this.heldAccessory = acc;
     if (m.accessory === 'backpack') { acc.position.set(0, 0.48, -0.22); this.body.add(acc); }
     else { acc.position.set(0.02, -0.42, 0.1); this.armR.add(acc); }
     this.parcel = box(0.3, 0.22, 0.24, '#b89a6a', 0, -0.3, 0.26); this.parcel.visible = false; this.armL.add(this.parcel);
@@ -132,7 +140,6 @@ export class Bot {
     if (dist < 0.6 && !this.path.length) { this.place = 'desk'; return; }
     if (this.headingTo(seat)) { this.place = 'desk'; return; }
     this.place = 'desk'; this.parcel.visible = false;
-    // Snap only for extreme desync repair — never for normal simulate moves.
 
     this.m.lead ? this.route(LEAD_SEAT, true) : this.route(seat);
   }
@@ -146,6 +153,10 @@ export class Bot {
   }
   update(dt: number, now: number) {
     this.animT += dt;
+    const atKeyboard = this.place === 'desk' && !this.path.length && !this.pendingRoute && this.sitBlend > .95;
+    this.body.position.z = atKeyboard ? .15 : 0;
+    this.heldAccessory.visible = !atKeyboard || this.m.accessory === 'backpack';
+    for (const elbow of this.elbows) elbow.rotation.x = atKeyboard ? -1.2 : 0;
     if (this.sitAge < SIT_MS) {
       this.sitAge += dt * 1000;
       this.sitBlend = this.sitFrom + (this.sitTo - this.sitFrom) * easeOutCubic(this.sitAge / SIT_MS);
@@ -183,11 +194,11 @@ export class Bot {
       return;
     }
     // Seated / standing micro-motion
-    const seated = this.sitBlend > 0.5;
-    const target = poseFor(this.state, seated, this.animT, this.phase, this.parcel.visible);
+    const target = poseFor(this.state, true, this.animT, this.phase, this.parcel.visible);
     const stand = poseFor(this.state, false, this.animT, this.phase, this.parcel.visible);
     const k = this.sitBlend;
-    this.body.position.y = stand.bodyY + (target.bodyY - stand.bodyY) * k;
+    const deskHeight = (STATIONS[this.m.id] ?? DEFAULT_STATION).desk.height ?? .76;
+    this.body.position.y = stand.bodyY + (target.bodyY - stand.bodyY) * k + (this.place === 'desk' ? (deskHeight - .46) * k : 0);
     this.legL.rotation.x = stand.leg + (target.leg - stand.leg) * k;
     this.legR.rotation.x = this.legL.rotation.x;
     this.armL.rotation.x = stand.armL + (target.armL - stand.armL) * k;

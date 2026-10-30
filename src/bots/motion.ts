@@ -1,7 +1,6 @@
 /** Procedural motion helpers — see MOTION.md */
 export const SIT_MS = 320;
 export const WALK_BASE = 3.25;
-export const SNAP_DIST = 28;
 
 export function easeOutCubic(t: number) {
   const x = Math.min(1, Math.max(0, t));
@@ -35,13 +34,13 @@ export function poseFor(
   }
   const breathe = Math.sin(t * 1.95 + phase) * 0.015;
   if (state === 'working') {
-    const type = Math.sin(t * 34 + phase) * 0.12 + Math.sin(t * 51 + phase * 2) * 0.08;
+    const type = Math.sin(t * 12 + phase) * 0.012;
     return {
       bodyY: -0.12 + breathe * 0.4,
       leg: -Math.PI / 2,
-      armL: -0.65 + Math.sin(t * 2.1 + phase) * 0.04,
-      armR: -0.7 + type,
-      leanZ: Math.sin(t * 0.7 + phase) * 0.04,
+      armL: -0.35 - type,
+      armR: -0.35 + type,
+      leanZ: 0,
       headY: Math.sin(t * 0.9 + phase) * 0.12,
     };
   }

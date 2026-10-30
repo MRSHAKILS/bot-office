@@ -107,3 +107,6 @@ Professional motion system for the isometric ops floor. Written for implementers
 - AI Office / Agent Office: gait + desk screen life
 - Game UI: “juice” via easing, not speed
 - Apple HIG motion: purposeful, brief, consistent
+
+## Corrected interaction contract
+Right-drag pans; left-drag orbits; wheel zooms. Fit office resets position, orientation and zoom. Typing uses articulated elbows with tiny alternating taps and desk-height alignment. Idle remains still. This supersedes the older whole-arm typing amplitudes above. See AGENTS.md for mandatory visual checks.

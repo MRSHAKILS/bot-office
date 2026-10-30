@@ -27,11 +27,13 @@ export class Tags {
     }
     items.sort((p, q) => q.pri - p.pri || p.y - q.y);
     const placed: typeof items = [];
-    const MIN = 28, ROW = 18;
+    const ROW = 24;
     for (const it of items) {
       let tries = 0;
-      while (tries < 3 && placed.some((p) => Math.abs(p.x - it.x) < MIN * 1.6 && Math.abs(p.y - it.y) < ROW)) { it.y -= ROW; tries++; }
+      while (tries < 3 && placed.some((p) => Math.abs(p.x - it.x) < (p.el.offsetWidth + it.el.offsetWidth) / 2 + 6 && Math.abs(p.y - it.y) < ROW)) { it.y -= ROW; tries++; }
       if (tries === 3 && it.pri === 0) it.fade = true;
+      it.x = Math.max(it.el.offsetWidth / 2 + 4, Math.min(w - it.el.offsetWidth / 2 - 4, it.x));
+      it.y = Math.max(30, Math.min(h - 12, it.y));
       placed.push(it);
     }
     for (const it of items) {
