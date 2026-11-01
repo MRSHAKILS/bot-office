@@ -15,3 +15,6 @@ Replaced whole-arm rapid typing with articulated elbows and small alternating ta
 
 ## Pan correction
 Both mouse buttons pan in screen space by default. Orbit toggles left-drag rotation. Removed per-axis target clamps. Visually verified a horizontal rightward drag followed by a leftward/upward drag in the local browser. This supersedes previous left-drag orbit defaults.
+
+## Final camera correction (2026-11-02)
+Left-drag rotates directly; right-drag pans; wheel zooms. Removed the Orbit toggle and all azimuth bounds. Locally verified horizontal rotation with a sideways drag and vertical tilt with a vertical drag. Previous pan-only defaults above are superseded.
