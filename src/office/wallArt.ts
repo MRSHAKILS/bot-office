@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { box, canvasTexture } from './materials';
 /**
- * Sparse gallery — public portfolio titles + stack wordmarks only.
+ * Sparse gallery — the four selected public project titles only.
  * Sized for default isometric camera (~60u away): large frames, no mipmaps,
  * MeshBasicMaterial so lighting doesn't wash letterforms.
- * Source: mrshakils.vercel.app / public GitHub. Four selected projects and two tech-stack panels.
+ * Source: mrshakils.vercel.app / public GitHub. Four selected projects; no tech-stack panels.
  */
 interface Piece {
   title: string;
@@ -19,10 +19,8 @@ interface Piece {
 const PIECES: Piece[] = [
   { title: 'Baki', kicker: 'PROJECT', accent: '#5b7fa6', wall: 'north', at: -8.2, w: 4.2, h: 2.2 },
   { title: 'S-Quiz', kicker: 'PROJECT', accent: '#b08a5a', wall: 'north', at: 7.6, w: 3.6, h: 2.2 },
-  { title: 'Stack', lines: ['React', 'Next.js', 'PyTorch'], kicker: 'STACK', accent: '#6b7f8e', wall: 'north', at: 12.8, w: 2.6, h: 2.6 },
   { title: 'The Possession', kicker: 'PROJECT', accent: '#6f8f6a', wall: 'west', at: 1.2, w: 4.2, h: 2.2 },
   { title: 'Silk Atlas', kicker: 'PROJECT', accent: '#b08a5a', wall: 'west', at: 6.2, w: 4.2, h: 2.2 },
-  { title: 'Stack', lines: ['FastAPI', 'Cloudflare', 'Three.js'], kicker: 'STACK', accent: '#8a7d9e', wall: 'west', at: 10.8, w: 2.6, h: 2.6 },
 ];
 
 function paint(c: CanvasRenderingContext2D, W: number, H: number, p: Piece) {
