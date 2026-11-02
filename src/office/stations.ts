@@ -1,9 +1,10 @@
+import type { TeamMember } from '../bots/team';
 import * as THREE from 'three';
 import { box, matte, canvasTexture } from './materials';
 
 /** Per-bot workstation config. Add an entry keyed by TeamMember.id for every new bot. */
 export type MonitorKind = 'flat' | 'ultrawide' | 'curved' | 'vertical' | 'laptop';
-export type ScreenTheme = 'ops' | 'calendar' | 'code' | 'charts' | 'hardware' | 'fitness' | 'lab' | 'docs' | 'timeline';
+export type ScreenTheme = 'ops' | 'calendar' | 'code' | 'charts' | 'hardware' | 'fitness' | 'lab' | 'docs' | 'timeline' | 'research' | 'qa' | 'marketing' | 'product' | 'data';
 export interface Monitor { kind: MonitorKind; w: number; h: number; offsetX: number; offsetZ?: number; yaw?: number; }
 export interface Station {
   monitors: Monitor[];
@@ -39,6 +40,16 @@ export const STATIONS: Record<string, Station> = {
   // SWE – Software zone (own carpet, east of Bot Lab)
   '7af8ff89-8acc-4ce2-9c97-2d5928e14400': { monitors: [{ kind: 'flat', w: 0.66, h: 0.42, offsetX: -0.36, yaw: 0.12 }, { kind: 'flat', w: 0.66, h: 0.42, offsetX: 0.36, yaw: -0.12 }], tower: { kind: 'gaming', led: '#0ea5e9' }, underglow: '#0ea5e9', screenTheme: 'code', desk: { finish: 'black', width: 1.8 }, chair: 'gaming', props: ['mug', 'headphones'] },
 };
+const DEMO_STATIONS: Record<string, Station> = {
+  Product: { monitors: [{kind:'ultrawide',w:1.4,h:.5,offsetX:0}], tower:{kind:'slim',led:'#a7f3d0'}, underglow:'#a7f3d0', screenTheme:'product', desk:{finish:'walnut',width:2.6}, chair:'task', props:['notebook','plant'] },
+  Research: { monitors: [{kind:'vertical',w:.5,h:.8,offsetX:-.55,yaw:.12},{kind:'flat',w:.9,h:.55,offsetX:.3}], tower:{kind:'aluminum',led:'#67e8f9'}, underglow:'#67e8f9', screenTheme:'research', desk:{finish:'white',width:2.6}, chair:'task', props:['books','lamp'] },
+  QA: { monitors: [{kind:'flat',w:.85,h:.5,offsetX:-.48,yaw:.1},{kind:'flat',w:.85,h:.5,offsetX:.48,yaw:-.1}], tower:{kind:'slim',led:'#5eead4'}, underglow:'#5eead4', screenTheme:'qa', desk:{finish:'oak',width:2.6}, chair:'task', props:['notebook','mug'] },
+  Marketing: { monitors: [{kind:'ultrawide',w:1.35,h:.55,offsetX:-.15},{kind:'vertical',w:.4,h:.65,offsetX:.85,yaw:-.2}], tower:{kind:'aluminum',led:'#f9a8d4'}, underglow:'#f9a8d4', screenTheme:'marketing', desk:{finish:'walnut',width:2.8}, chair:'task', props:['plant','notebook'] },
+  'Data Lab': { monitors: [{kind:'curved',w:1.3,h:.55,offsetX:-.15},{kind:'vertical',w:.4,h:.65,offsetX:.85,yaw:-.2}], tower:{kind:'lab',led:'#a5b4fc'}, underglow:'#a5b4fc', screenTheme:'data', desk:{finish:'white',width:2.8}, chair:'task', props:['notebook','lamp'] },
+};
+export function stationFor(m: TeamMember): Station {
+  return (m.id.startsWith('demo-') ? DEMO_STATIONS[m.dept] : undefined) ?? STATIONS[m.stationId ?? m.id] ?? DEFAULT_STATION;
+}
 export const DEFAULT_STATION: Station = { monitors: [{ kind: 'flat', w: 0.8, h: 0.48, offsetX: 0 }], tower: { kind: 'slim', led: '#94a3b8' }, underglow: '#94a3b8', screenTheme: 'ops', desk: { finish: 'oak' }, chair: 'task', props: ['mug'] };
 
 const BEZEL = '#16181c', DARK = '#3a3f46';
@@ -47,7 +58,19 @@ const em = (c: string) => new THREE.MeshBasicMaterial({ color: c, toneMapped: fa
 // ---- screen painters ---------------------------------------------------------
 type Painter = (c: CanvasRenderingContext2D, W: number, H: number, t: number, accent: string, seed: number) => void;
 const bg = (c: CanvasRenderingContext2D, W: number, H: number, col = '#0b1220') => { c.fillStyle = col; c.fillRect(0, 0, W, H); };
+function demoPanel(title: string, labels: string[]): Painter {
+ return (c,W,H,t,a) => {
+  bg(c,W,H,'#101e2b'); c.fillStyle=a; c.font=`700 ${H*.12}px system-ui`; c.fillText(title+' / DEMO',W*.06,H*.18);
+  labels.forEach((label,i)=>{ const y=H*(.34+i*.19); c.fillStyle='#263c50'; c.fillRect(W*.05,y-H*.1,W*.9,H*.15); c.fillStyle='#e2edf6'; c.font=`500 ${H*.095}px system-ui`; c.fillText(label,W*.09,y); c.fillStyle=a; c.fillRect(W*.75,y-H*.06,W*(.1+.03*Math.sin(t*.4+i)),H*.025); });
+ };
+}
 const PAINT: Record<ScreenTheme, Painter> = {
+ research: demoPanel('SOURCES',['Compare papers','Check evidence','Summarize findings']),
+ qa: demoPanel('TEST REVIEW',['Edge cases','Accessibility','Regression plan']),
+ marketing: demoPanel('CAMPAIGN',['Audience','Product story','Launch draft']),
+ product: demoPanel('ROADMAP',['User needs','Feature scope','Next milestone']),
+ data: demoPanel('EXPERIMENTS',['Compare runs','Inspect patterns','Report limits']),
+
   ops(c, W, H, t, a, s) { bg(c, W, H); for (let i = 0; i < 4; i++) { const x = 12 + (i % 2) * W / 2, y = 12 + Math.floor(i / 2) * H / 2; c.fillStyle = '#111b2e'; c.fillRect(x, y, W / 2 - 24, H / 2 - 24); c.strokeStyle = i ? '#60a5fa' : a; c.lineWidth = 3; c.beginPath(); for (let k = 0; k < 20; k++) { const px = x + 6 + k * (W / 2 - 36) / 19, py = y + H / 4 - 10 + Math.sin(t * 1.5 + k * 0.6 + i + s) * (H / 10); k ? c.lineTo(px, py) : c.moveTo(px, py); } c.stroke(); } },
   calendar(c, W, H, t, a, s) { bg(c, W, H, '#14110c'); const cols = 5, rows = 6; c.strokeStyle = '#2b2419'; for (let i = 0; i <= cols; i++) { c.beginPath(); c.moveTo(i * W / cols, 0); c.lineTo(i * W / cols, H); c.stroke(); } for (let k = 0; k < 7; k++) { const col = (k * 3 + s) % cols, row = (k * 2 + s) % rows; c.fillStyle = k % 2 ? a : '#fbbf24'; c.globalAlpha = 0.8; c.fillRect(col * W / cols + 4, row * H / rows + 4, W / cols - 8, H / rows * 1.4); } c.globalAlpha = 1; c.fillStyle = '#ef4444'; const ny = ((t * 8) % H); c.fillRect(0, ny, W, 2); },
   code(c, W, H, t, a, s) { bg(c, W, H, '#0d1117'); const n = Math.floor(t * 3 + s) % 30; for (let i = 0; i < 14; i++) { const len = ((i * 37 + n * 11) % 9) + 3; c.fillStyle = ['#ff7b72', '#79c0ff', '#a5d6ff', a, '#d2a8ff'][(i + n) % 5]; c.fillRect(10 + ((i * 3) % 4) * 14, 10 + i * (H - 20) / 14, len * W / 18, (H - 20) / 22); } },

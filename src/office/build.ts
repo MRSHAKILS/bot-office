@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { box, matte, canvasTexture } from './materials';
 import { ZONES, LEAD_OFFICE, FLOOR_BOUNDS, deskOrigin } from './layout';
 import { wallArt } from './wallArt';
-import { TEAM } from '../bots/team';
-import { STATIONS, DEFAULT_STATION, buildStation } from './stations';
+import { TEAM, DEMO_MODE } from '../bots/team';
+import { stationFor, buildStation } from './stations';
 
 export interface OfficeHandles { blinkers: THREE.Mesh[]; update(t: number): void; }
 
@@ -72,7 +72,7 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
     const z = ZONES[m.dept]; const o = deskOrigin(m);
     const first = TEAM.find((t) => !t.lead && t.dept === m.dept) === m; // shared zone: one rug + decor
     if (first) { const rug = carpetWithLetters(renderer, 6, 5, tint(m.color), m.dept); rug.position.set(z.x, 0.01, z.z); scene.add(rug); }
-    const st = buildStation(STATIONS[m.id] ?? DEFAULT_STATION, m.color === '#1a1a1a' ? '#f59e0b' : m.color, renderer, TEAM.indexOf(m));
+    const st = buildStation(stationFor(m), m.color === '#1a1a1a' ? '#f59e0b' : m.color, renderer, TEAM.indexOf(m));
     st.g.position.set(o.x, 0, o.z - 0.75); scene.add(st.g); updaters.push(st.update);
     if (first) scene.add(accessoryDecor(m.accessory, z.x - 2.4, z.z - 1.9, m.color));
   }
@@ -82,7 +82,7 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   const rug = carpetWithLetters(renderer, L.x1 - L.x0, L.z1 - L.z0, tint('#2563eb', 0.08), 'Ops Â· Lead');
   rug.position.set(cx, 0.012, cz); scene.add(rug);
   const leadM = TEAM.find((t) => t.lead)!;
-  const ls = buildStation(STATIONS[leadM.id] ?? DEFAULT_STATION, '#60a5fa', renderer, 0);
+  const ls = buildStation(stationFor(leadM), '#60a5fa', renderer, 0);
   ls.g.position.set(-16, 0, -11.35); scene.add(ls.g); updaters.push(ls.update);
   const glass = new THREE.MeshPhysicalMaterial({ color: '#b8c9d6', transparent: true, opacity: 0.16, roughness: 0.08, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05, depthWrite: false, side: THREE.DoubleSide });
   const frame = matte('#e6e9ec');
@@ -114,7 +114,7 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
 
   // lounge (x -20..-12, z 1..14)
   const lr = new THREE.Mesh(new THREE.PlaneGeometry(8, 11), matte(tint('#64748b', 0.14))); lr.rotation.x = -Math.PI / 2; lr.position.set(-16, 0.01, 7.3); lr.receiveShadow = true; scene.add(lr);
-  const sofa = (z: number, back: number) => { const g = new THREE.Group(); g.add(box(6.6, 0.45, 1.0, '#4b5563', 0, 0, 0)); g.add(box(6.6, 0.7, 0.3, '#3f4752', 0, 0.45, back * 0.4)); g.add(box(0.3, 0.7, 1.0, '#3f4752', -3.3, 0, 0)); g.add(box(0.3, 0.7, 1.0, '#3f4752', 3.3, 0, 0)); g.position.set(-16.2, 0, z); return g; };
+  const sofa = (z: number, back: number) => { const g = new THREE.Group(); g.add(box(6.6, 0.45, 1.0, '#386b70', 0, 0, 0)); g.add(box(6.6, 0.7, 0.3, '#3f4752', 0, 0.45, back * 0.4)); g.add(box(0.3, 0.7, 1.0, '#3f4752', -3.3, 0, 0)); g.add(box(0.3, 0.7, 1.0, '#3f4752', 3.3, 0, 0)); g.position.set(-16.2, 0, z); return g; };
   scene.add(sofa(3.95, -1)); scene.add(sofa(9.65, 1));
   scene.add(box(3.4, 0.36, 1.4, WOOD, -16.2, 0, 6.8)); scene.add(box(0.5, 0.02, 0.35, '#e5e7eb', -15.6, 0.36, 6.7, false));
   scene.add(plant(-19.3, 1.8));
@@ -142,7 +142,7 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   const sr = carpetWithLetters(renderer, 6, 2, tint('#1c1f24', 0.08), 'Servers'); sr.position.set(8.8, 0.01, 10.6); scene.add(sr);
 
   // research area (x 13..20, z -14..1)
-  const rr = carpetWithLetters(renderer, 7, 14, tint('#0ea5e9', 0.08), 'Research'); rr.position.set(16.5, 0.01, -6.8); scene.add(rr);
+  if (!DEMO_MODE) { const rr = carpetWithLetters(renderer, 7, 14, tint('#0ea5e9', 0.08), 'Research'); rr.position.set(16.5, 0.01, -6.8); scene.add(rr); }
   const screens = researchScreens(renderer);
   screens.meshes.forEach((m) => scene.add(m));
   updaters.push(screens.update);
@@ -151,6 +151,9 @@ export function buildOffice(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
 
   // decor
   scene.add(plant(-11, -13.2)); scene.add(plant(12.6, 7.6, 0.9)); // 8 plants total
+  // Low plants stay outside the aisle grid and never cover carpet labels.
+  scene.add(plant(-19.2, 12.8, .9)); scene.add(plant(20.5, -12, .8));
+  for (let i=0;i<3;i++) scene.add(box(.15,.17,.15,'#faf5e9',-7.5+i*.3,.9,13.4));
   wallArt(scene, renderer); // â‰¤6 calm gallery pieces (public portfolio titles + stack)
 
   return { blinkers, update(t) {

@@ -18,3 +18,15 @@ Both mouse buttons pan in screen space by default. Orbit toggles left-drag rotat
 
 ## Final camera correction (2026-11-02)
 Left-drag rotates directly; right-drag pans; wheel zooms. Removed the Orbit toggle and all azimuth bounds. Locally verified horizontal rotation with a sideways drag and vertical tilt with a vertical drag. Previous pan-only defaults above are superseded.
+
+## 2026-11-03 simulation roster and workspace verification
+
+- Public roster: 12 demo-only IDs, including Perplexity / Research, Claude / QA, Jasper / Marketing, ChatGPT / Product, Gemini / Data Lab. Original 11 live identities and backend roster unchanged.
+- Specialized demo station configurations do not modify live workstation configs. Added Data Lab in the former open research area, removed the overlapping large rug in demo, and expanded lounge seating to 12.
+- `node scripts/check-motion.mjs`: 93,840 fixed-step samples across both rosters; no large position jumps, floor-boundary violations, or crossings of another agent's desk footprint; all agents reached their desk and lounge after simulated completion; idle pose stable.
+- These checks cover route animation and desk clearance, not rigid-body physics, inter-agent collision avoidance, or all furniture/glass collision volumes.
+- Production build passes. Video capture tooling is gated by import.meta.env.DEV and absent from the production output.
+
+- Mixed 100/800ms frame-gap checks pass for Fitness, SWE and Gemini under repeated working-status updates; journeys still reach their desk.
+- Browser inspection confirmed the new 12-person demo directory, matching carpets, QA role details, day lighting, horizontal rotation, and cancelled sign-in retaining simulation. Direct live mode shows the original 11 names; returning to simulation loads the 12 demo identities.
+- Authenticated live data was not verified locally: the Vite-only server has no live Worker API. This is not an end-to-end production auth test.

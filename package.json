@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:motion": "node scripts/check-motion.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260702.1",

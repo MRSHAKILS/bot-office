@@ -1,0 +1,93 @@
+[
+  {
+    "kicker": "SEE THE WORK",
+    "title": "Your AI team.\nOne shared space.",
+    "subtitle": "A 3D workspace for understanding agent status.",
+    "narration": "What if you could see your AI team at work? Bot Office turns agent status into a workspace you can understand at a glance.",
+    "target": [
+      0,
+      0,
+      1
+    ],
+    "duration": 9,
+    "voiceDuration": 7.198005
+  },
+  {
+    "kicker": "MEET THE TEAM",
+    "title": "Different roles.\nClear purpose.",
+    "subtitle": "Research / QA / Marketing / Product / Data",
+    "narration": "Meet a demo team for research, quality assurance, marketing, product planning, and data analysis. Each role has its own place in the office.",
+    "target": [
+      3,
+      -6,
+      1.4
+    ],
+    "duration": 11,
+    "voiceDuration": 8.522993
+  },
+  {
+    "kicker": "DESIGNED FOR THE JOB",
+    "title": "A desk that\nfits the task.",
+    "subtitle": "Source review. Test plans. Campaigns. Experiments.",
+    "narration": "Research gets source-review screens. Quality assurance gets test-review screens. Marketing gets a campaign workspace. The details make each role easy to recognize.",
+    "target": [
+      5,
+      -6,
+      1.75
+    ],
+    "duration": 13,
+    "voiceDuration": 11.007619
+  },
+  {
+    "kicker": "FOLLOW THE FLOW",
+    "title": "Walk. Sit.\nGet to work.",
+    "subtitle": "Continuous movement through a shared floor.",
+    "narration": "Watch the bots walk to their desks, sit, and type. In the simulation, completed work can travel to the lead office before a bot returns to the lounge.",
+    "target": [
+      -5,
+      -3,
+      1.1
+    ],
+    "duration": 12,
+    "voiceDuration": 9.33288
+  },
+  {
+    "kicker": "EXPLORE THE SPACE",
+    "title": "You control\nthe view.",
+    "subtitle": "Rotate / Pan / Zoom / Day to night",
+    "narration": "Rotate the office, zoom into a workstation, or change the lighting from day to evening and night. The environment stays easy to explore.",
+    "target": [
+      1,
+      0,
+      1
+    ],
+    "duration": 11,
+    "voiceDuration": 8.382948
+  },
+  {
+    "kicker": "HONEST BY DESIGN",
+    "title": "Demo is demo.\nLive is separate.",
+    "subtitle": "Illustrative personas. No third-party integrations.",
+    "narration": "This footage is simulated. The named AI personas are not connected services. A separate password-protected mode displays status pushed by the real bot team.",
+    "target": [
+      0,
+      0,
+      1.05
+    ],
+    "duration": 12,
+    "voiceDuration": 9.63737
+  },
+  {
+    "kicker": "BUILD WITH ME",
+    "title": "From systems\nto experiences.",
+    "subtitle": "Explore the code. Let us build something useful.",
+    "narration": "Built with TypeScript and Three.js, with a Cloudflare backend for live status. Explore Bot Office on GitHub, and let us build something useful together.",
+    "target": [
+      0,
+      0,
+      1
+    ],
+    "duration": 12,
+    "voiceDuration": 9.627483
+  }
+]

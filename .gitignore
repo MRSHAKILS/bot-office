@@ -17,3 +17,6 @@ deploy-out.txt
 
 
 .vercel/
+
+.checks/
+marketing-output/

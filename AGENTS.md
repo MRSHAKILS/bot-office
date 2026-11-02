@@ -8,3 +8,6 @@
 - Check labels, selection, tooltips, narrow layouts, login cancellation, and camera reset. Use actual label bounds for collision avoidance.
 - Run the production build and inspect the actual UI after changes. Record unverified checks honestly; a successful build alone is not visual approval.
 - Preserve secrets and the Cloudflare backend. Push only the authorized redesign branch; never merge automatically.
+
+- Public simulation personas are separate from LIVE_TEAM. Never change real IDs or server roster for a demo request. Demo brands are illustrative, not integrations; keep that disclosure visible. Update department carpets, tags, sidebar and role-specific status lines together.
+- Marketing footage must visibly disclose simulation, use actual app renders, and avoid fabricated performance, autonomous execution or integration claims. Never upload or post without explicit authorization.
