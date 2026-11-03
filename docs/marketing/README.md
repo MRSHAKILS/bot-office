@@ -63,3 +63,9 @@ Code: https://github.com/MRSHAKILS/bot-office
 What would help you understand an AI team's work at a glance?
 
 #SoftwareEngineering #ThreeJS #BuildInPublic
+
+## Final ElevenLabs edition
+
+Use `marketing-output/bot-office-youtube-elevenlabs.mp4` and `marketing-output/bot-office-linkedin-elevenlabs.mp4`. These replace the rejected Windows narration with Jamie - Upbeat & Professional (ElevenLabs v4). Generation ID: JUCs5eYwfgQHOn0KUnpi. No voice cloning was used.
+
+Run `python scripts/marketing/finish-elevenlabs.py` after downloading the authorized narration as `marketing-output/elevenlabs-jamie.mp3`. The seven audio sections are split at detected silence midpoints and placed at the original chapter starts. Caption phrase timing is proportional within each section, not forced-aligned word timing; transcription service was unavailable. Final footage uses temporal frame blending; this is an edited film, not a real-time rendering benchmark. The older `assemble.py` exports are superseded.
