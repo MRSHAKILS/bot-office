@@ -12,7 +12,18 @@ for i,s in enumerate(scenes):
  offset+=s['duration']
 filters.append('[1:a]volume=0.5[bed]')
 filters.append(''.join(f'[v{i}]' for i in range(7))+'[bed]amix=inputs=8:duration=longest:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=9,apad,atrim=0:80[final]')
-subprocess.run(['ffmpeg','-y','-v','error','-i',str(out/'elevenlabs-jamie.mp3'),'-i',str(out/'original-score.wav'),'-filter_complex',';'.join(filters),'-map','[final]',str(out/'elevenlabs-master.wav')],check=True)
+import numpy as np, wave
+raw=subprocess.check_output(['ffmpeg','-v','error','-i',str(out/'elevenlabs-jamie.mp3'),'-f','f32le','-ar','48000','-ac','1','pipe:1'])
+voice=np.frombuffer(raw,dtype='<f4');mix=np.zeros(80*48000,dtype=np.float32)
+with wave.open(str(out/'original-score.wav'),'rb') as f: bed=np.frombuffer(f.readframes(f.getnframes()),dtype='<i2').astype(np.float32)/32768
+mix[:len(bed)]+=bed*.35
+offset=0
+for i,s in enumerate(scenes):
+ a,b=bounds[i:i+2];part=voice[int(a*48000):int(b*48000)];at=int((offset+.4)*48000);mix[at:at+len(part)]+=part;offset+=s['duration']
+mix*=.84/max(.84,float(np.max(np.abs(mix))))
+with wave.open(str(out/'elevenlabs-master.wav'),'wb') as f:
+ f.setnchannels(1);f.setsampwidth(2);f.setframerate(48000);f.writeframes((mix*32767).astype('<i2').tobytes())
+
 def stamp(t,ass=False):
  return f'{int(t//3600)}:{int(t%3600//60):02}:{int(t%60):02}.{int(t%1*100):02}' if ass else f'{int(t//3600):02}:{int(t%3600//60):02}:{int(t%60):02},{int(t%1*1000):03}'
 (out/'bot-office-captions.srt').write_text('\n\n'.join(f'{i+1}\n{stamp(a)} --> {stamp(b)}\n'+ '\n'.join(textwrap.wrap(p,62)) for i,(a,b,p) in enumerate(events)),encoding='utf-8')
