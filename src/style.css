@@ -40,3 +40,5 @@ canvas{display:block;touch-action:none}
 .atmosphere{position:absolute;bottom:20px;left:calc((100% - 350px)/2);transform:translateX(-50%);display:flex;gap:4px;padding:6px;background:#101d2c;border:1px solid #344256;border-radius:28px;z-index:5}.atmosphere button{border:1px solid transparent;background:none;color:#b9c4d4;padding:11px 16px;border-radius:22px;font:500 12px system-ui;white-space:nowrap}.atmosphere button[aria-pressed=true]{background:#2b3547;border-color:#45536c;color:#fff}.atmosphere button:hover{background:#243044}.camera-tools{bottom:78px}.bar{left:auto;right:12px;transform:none}@media(max-width:1000px){.atmosphere{left:calc((100% - 308px)/2)}.atmosphere button{padding:10px}}@media(max-width:720px){.atmosphere{left:50%;bottom:16px}.atmosphere button{min-height:44px;padding:8px 13px}.camera-tools{bottom:82px}#app{bottom:190px}.bar{bottom:2px;right:12px}}
 
 .camera-help{position:absolute;left:24px;top:78px;color:#91a4ba;font-size:11px;pointer-events:none}@media(max-width:720px){.camera-help{top:86px;left:16px;font-size:10px}}
+
+.demo-personas{font-size:11px;line-height:1.6;color:#aab9cb;padding:10px 12px;background:#192939;border-radius:10px}

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { box, matte, limb } from '../office/materials';
 const sph = (r: number, c: string, x: number, y: number, z: number) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), matte(c)); m.position.set(x, y, z); m.castShadow = true; return m; };
 const tor = (r: number, t: number, c: string, x: number, y: number, z: number, sz = 1, sx = 1) => { const m = new THREE.Mesh(new THREE.TorusGeometry(r, t, 8, 24), matte(c)); m.rotation.x = Math.PI / 2; m.scale.set(sx, sz, 1); m.position.set(x, y, z); return m; };
-import { STATIONS, DEFAULT_STATION } from '../office/stations';
+import { stationFor } from '../office/stations';
 import { BOT_STYLES } from './styles';
 import type { TeamMember, Accessory } from './team';
 import type { BotState } from '../api/status';
@@ -72,7 +72,7 @@ export class Bot {
     this.body.add(box(0.07, 0.012, 0.01, dark, 0, 1.02, 0.158, false)); // mouth line
     this.armL = mkArm(-0.29); this.armR = mkArm(0.29);
     this.body.add(this.armL, this.armR);
-    BOT_STYLES[m.short]?.(this.body, this.head, col, [this.armL, this.armR], [this.legL, this.legR]);
+    BOT_STYLES[m.styleKey ?? m.short]?.(this.body, this.head, col, [this.armL, this.armR], [this.legL, this.legR]);
     const acc = accessoryMesh(m.accessory, col); this.heldAccessory = acc;
     if (m.accessory === 'backpack') { acc.position.set(0, 0.48, -0.22); this.body.add(acc); }
     else { acc.position.set(0.02, -0.42, 0.1); this.armR.add(acc); }
@@ -197,7 +197,7 @@ export class Bot {
     const target = poseFor(this.state, true, this.animT, this.phase, this.parcel.visible);
     const stand = poseFor(this.state, false, this.animT, this.phase, this.parcel.visible);
     const k = this.sitBlend;
-    const deskHeight = (STATIONS[this.m.id] ?? DEFAULT_STATION).desk.height ?? .76;
+    const deskHeight = stationFor(this.m).desk.height ?? .76;
     this.body.position.y = stand.bodyY + (target.bodyY - stand.bodyY) * k + (this.place === 'desk' ? (deskHeight - .46) * k : 0);
     this.legL.rotation.x = stand.leg + (target.leg - stand.leg) * k;
     this.legR.rotation.x = this.legL.rotation.x;

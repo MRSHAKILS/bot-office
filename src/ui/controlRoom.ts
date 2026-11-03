@@ -1,15 +1,21 @@
-import { TEAM } from '../bots/team';
+import { TEAM, DEMO_MODE } from '../bots/team';
 import type { StatusPayload } from '../api/status';
 
 export function controlRoom() {
   const header = document.createElement('header');
   header.className = 'office-header';
-  header.innerHTML = '<div class="brand-mark">B</div><div><h1>Bot Office</h1><p>Your Grok team, together.</p></div><span class="mode">Connecting</span><button class="directory-toggle">Team</button>';
+  header.innerHTML = '<div class="brand-mark">B</div><div><h1>Bot Office</h1><p>A workspace for AI teamwork.</p></div><span class="mode">Connecting</span><button class="directory-toggle">Team</button>';
   const sidebar = document.createElement('aside'); sidebar.className = 'directory';
-  sidebar.innerHTML = '<div class="section-heading"><h2>The team</h2><span>11 agents</span></div><div class="summary"></div><div class="roster"></div><section class="agent-detail" hidden></section><section class="usage-card"><h2>Weekly usage</h2><p>Usage unavailable</p></section><section><div class="section-heading"><h2>Activity</h2><span class="activity-kind">Observed this session</span></div><ol class="activity"></ol></section>';
+  sidebar.innerHTML = '<div class="section-heading"><h2>The team</h2><span class="team-count"></span></div><div class="summary"></div><div class="roster"></div><section class="agent-detail" hidden></section><section class="usage-card"><h2>Weekly usage</h2><p>Usage unavailable</p></section><section><div class="section-heading"><h2>Activity</h2><span class="activity-kind">Observed this session</span></div><ol class="activity"></ol></section>';
   const toolbar = document.createElement('nav'); toolbar.className = 'camera-tools'; toolbar.setAttribute('aria-label', 'Office view');
   toolbar.innerHTML = '<button data-action="fit">Fit office</button><button data-action="in" aria-label="Zoom in">+</button><button data-action="out" aria-label="Zoom out">−</button><button data-action="labels" aria-pressed="true">Labels</button><button data-action="pause" aria-pressed="false">Pause motion</button>';
   document.body.append(header, sidebar, toolbar);
+  sidebar.querySelector('.team-count')!.textContent = `${TEAM.length} agents`;
+  if (DEMO_MODE) {
+    const note = document.createElement('p'); note.className = 'demo-personas';
+    note.textContent = 'Illustrative personas. Perplexity, Claude, Jasper, ChatGPT and Gemini are not connected services.';
+    sidebar.querySelector('.summary')!.after(note);
+  }
   header.querySelector('button')!.addEventListener('click', () => document.body.classList.toggle('show-team'));
   const rows = new Map<string, HTMLButtonElement>(); let selected = ''; let payload: StatusPayload = { bots: [], feedHealthy: false }; let demo = false;
   const seen = new Map<string, string>();

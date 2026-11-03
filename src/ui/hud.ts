@@ -10,7 +10,7 @@ export function hud(app: HTMLElement) {
     simBtn: bar.querySelector('#sim') as HTMLButtonElement,
     signInBtn: bar.querySelector('#signin') as HTMLButtonElement,
     setGuest(on: boolean) { (bar.querySelector('#signin') as HTMLElement).hidden = !on; simLabel.textContent = on ? 'Simulation Â· public demo' : 'Simulation'; },
-    setSim(on: boolean) { simLabel.hidden = !on; (bar.querySelector('#sim') as HTMLButtonElement).textContent = on ? 'Stop Simulation' : 'Simulate Work'; },
+    setSim(on: boolean) { simLabel.hidden = !on; (bar.querySelector('#sim') as HTMLButtonElement).textContent = on ? 'View live office' : 'Simulate Work'; },
     setLive(n: number) { (live.querySelector('.n') as HTMLElement).textContent = `${n} working`; live.classList.toggle('on', n > 0); },
     setWarn(msg: string | null) { warn.hidden = !msg; warn.textContent = msg ?? ''; },
   };

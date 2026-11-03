@@ -8,7 +8,7 @@ import { buildOffice } from './office/build';
 import { usageBoard } from './office/usageBoard';
 import { LOUNGE_SEATS, FLOOR_BOUNDS } from './office/layout';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { TEAM } from './bots/team';
+import { TEAM, DEMO_MODE } from './bots/team';
 import { Bot } from './bots/bot';
 import { Simulation } from './bots/simulate';
 import { Tags } from './ui/overlay';
@@ -109,7 +109,10 @@ document.addEventListener('office-focus', e => {
 
 // ---- status wiring ----------------------------------------------------------
 const sim = new Simulation();
-const forceSim = new URLSearchParams(location.search).get('simulate') === '1';
+function navigateMode(demo: boolean) {
+  const url = new URL(location.href); url.searchParams.delete('simulate');
+  url.searchParams.set('mode', demo ? 'demo' : 'live'); location.assign(url);
+}
 let live: StatusPayload | null = null; let feedError = false;
 function apply(p: StatusPayload, simulated: boolean) {
   const now = Date.now(); let active = 0;
@@ -133,7 +136,7 @@ let authed = false; let guest = false; let gateOpen = false;
 async function poll() {
   try {
     live = await fetchStatus(); feedError = false; authed = true;
-    if (guest) { guest = false; ui.setGuest(false); if (sim.running && !forceSim) setSim(false); }
+    if (guest) { guest = false; ui.setGuest(false); if (sim.running) setSim(false); }
     if (!sim.running) apply(live, false);
   }
   catch (e) {
@@ -144,29 +147,35 @@ async function poll() {
 }
 /** Unauthenticated visitors: public simulation + non-blocking sign-in (live feed stays password-gated). */
 function enterGuest() {
+  if (!DEMO_MODE) { navigateMode(true); return; }
   if (!guest) { guest = true; ui.setGuest(true); }
   if (!sim.running && !gateOpen) setSim(true);
 }
 async function signIn() {
   if (gateOpen) return; gateOpen = true;
   const ok = await passwordGate(app); gateOpen = false;
-  if (ok) { authed = true; guest = false; ui.setGuest(false); setSim(false); await poll(); }
+  if (ok) { authed = true; guest = false; ui.setGuest(false); navigateMode(false); }
   else if (!sim.running) setSim(true);
 }
 function setSim(on: boolean) {
+  if (on !== DEMO_MODE) { navigateMode(on); return; }
   if (on && !sim.running) { feedLog.lines.length = 0; sim.start((p) => apply(p, true)); }
   if (!on && sim.running) { sim.stop(); feedLog.lines.length = 0; apply(live ?? { bots: [], feedHealthy: true }, false); }
   ui.setSim(on); refreshWarning();
 }
 ui.simBtn.addEventListener('click', () => {
-  if (sim.running && guest && !authed) { setSim(false); void signIn(); return; } // never leave guests on an empty floor
+  if (sim.running && guest && !authed) { void signIn(); return; } // never leave guests on an empty floor
   setSim(!sim.running);
 });
 ui.signInBtn.addEventListener('click', () => void signIn());
-if (forceSim) setSim(true);
-else ui.setGuest(true); // chip immediately; 401 â†’ enterGuest starts sim
-poll(); setInterval(poll, 20000); setInterval(refreshWarning, 30000);
+if (DEMO_MODE) enterGuest();
+else { void poll(); setInterval(poll, 20000); }
+setInterval(refreshWarning, 30000);
 
+let capture: { before():void; after():void } | undefined;
+if (import.meta.env.DEV && DEMO_MODE && new URLSearchParams(location.search).has('record')) {
+ void import('./dev/record').then(({installRecorder})=> { capture=installRecorder(renderer,cam,controls,mode=>{atmosphereMode=mode;applyAtmosphere();}); paused=false; });
+}
 // ---- loop -------------------------------------------------------------------
 const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
@@ -175,7 +184,9 @@ renderer.setAnimationLoop(() => {
   controls.update(); if (!paused && !document.hidden) office.update(t);
   const n = Math.ceil(dt / 0.05);
   for (let i = 0; i < (paused || document.hidden ? 0 : n); i++) for (const b of bots) b.update(dt / n, now);
+  capture?.before();
   renderer.render(scene, cam);
+  capture?.after();
   tags.update(cam, app.clientWidth, app.clientHeight);
 });
 (window as any).__office = { bots, sim }; // debug hook for screenshots
