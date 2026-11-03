@@ -1,3 +1,5 @@
+> Previous 80-second exports are rejected: source capture gaps and frame-blending ghosting. Do not upload them. Replacement edit is under review.
+
 # Bot Office marketing package
 
 An 80-second portfolio film showing actual app-rendered simulation footage. Deliverables are generated in `marketing-output/` (ignored by Git):
@@ -38,13 +40,13 @@ Bot Office is my interactive 3D workspace for visualizing agent status. This wal
 
 The named AI personas are illustrative, not connected third-party services. The separate authenticated live mode displays status pushed by the real bot team.
 
-Built with TypeScript, Three.js, Vite, and a Cloudflare Worker with a SQLite Durable Object.
+Designed to make AI teamwork easier to understand at a glance.
 
 Code: https://github.com/MRSHAKILS/bot-office
 
 Interested in software engineering, research tools, and useful AI interfaces? Let's connect and build something useful.
 
-Synthetic narration. Simulated footage. #ThreeJS #TypeScript #SoftwareEngineering
+Synthetic narration. Simulated footage. #SoftwareEngineering #ProductDesign
 
 ## LinkedIn post
 
@@ -56,7 +58,7 @@ This demo explores research, QA, marketing, product planning, and data analysis.
 
 The interesting engineering work was keeping the visual story honest: separating demo and live identities, matching department labels to roles, and checking movement through the floor plan.
 
-Built with TypeScript, Three.js, Vite, and Cloudflare. I'd love to bring this mix of software engineering, research-minded testing, and product thinking to a team building useful tools.
+I'd love to bring this mix of software engineering, research-minded testing, and product thinking to a team building useful tools.
 
 Code: https://github.com/MRSHAKILS/bot-office
 

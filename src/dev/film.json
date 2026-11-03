@@ -81,7 +81,7 @@
     "kicker": "BUILD WITH ME",
     "title": "From systems\nto experiences.",
     "subtitle": "Explore the code. Let us build something useful.",
-    "narration": "Built with TypeScript and Three.js, with a Cloudflare backend for live status. Explore Bot Office on GitHub, and let us build something useful together.",
+    "narration": "Explore Bot Office on GitHub, and let us build something useful together.",
     "target": [
       0,
       0,

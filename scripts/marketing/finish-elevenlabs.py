@@ -1,3 +1,4 @@
+raise SystemExit('Legacy capture rejected: contains multi-second frame gaps. Use rebuild-short.py for the reviewed continuous-shot recut.')
 import json,subprocess,re,textwrap
 from pathlib import Path
 root=Path('.'); out=root/'marketing-output'; scenes=json.loads((root/'src/dev/film.json').read_text())

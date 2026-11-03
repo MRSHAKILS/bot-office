@@ -11,3 +11,5 @@
 
 - Public simulation personas are separate from LIVE_TEAM. Never change real IDs or server roster for a demo request. Demo brands are illustrative, not integrations; keep that disclosure visible. Update department carpets, tags, sidebar and role-specific status lines together.
 - Marketing footage must visibly disclose simulation, use actual app renders, and avoid fabricated performance, autonomous execution or integration claims. Never upload or post without explicit authorization.
+
+- Marketing exports: reject source frame gaps over 350 ms; never blend across gaps or text cuts. Inspect the entire timeline and every transition in both aspect ratios. Do not describe decoding checks or sampled stills as an audiovisual playback review. Keep frontend/technology-stack exposition out of promotional narration and copy.
