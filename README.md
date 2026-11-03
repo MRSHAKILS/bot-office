@@ -37,7 +37,7 @@ The public demo replaces the two study personas, personal assistant, and growth 
 
 ## Preview
 
-![Portfolio film frame showing the updated workstations](docs/marketing/office-team.png)
+![Animated preview of the updated Bot Office simulation](docs/marketing/office-preview.gif)
 
 Earlier live-roster video: [office-walkthrough.mp4](docs/demo/office-walkthrough.mp4) · [simulation-preview.mp4](docs/demo/simulation-preview.mp4)
 
